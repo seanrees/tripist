@@ -48,9 +48,3 @@ func Authorize() []byte {
 
 	return bytes
 }
-
-func UnmarshalToken(t string) *oauth2.Token {
-	var tok oauth2.Token
-	json.Unmarshal([]byte(t), &tok)
-	return &tok
-}
