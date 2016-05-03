@@ -2,25 +2,57 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/mrjones/oauth"
 	"github.com/seanrees/tripist/todoist"
 	"github.com/seanrees/tripist/tripit"
 	"github.com/twinj/uuid"
 	"golang.org/x/oauth2"
+	"io/ioutil"
+	"os"
 	"time"
 )
+
+type userConfig struct {
+	// tripitToken is the user's TripIt oAuth token (oauth.AccessToken.Token).
+	TripitToken string
+
+	// tripitSecret is the user's TripIt oAuth secret (oauth.AccessToken.Secret).
+	TripitSecret string
+
+	// todoistToken is the user's Todoist oauth2 AccessToken (oauth2.Token.AccessToken).
+	TodoistToken string
+}
+
+func (u *userConfig) TripitOAuthAccessToken() *oauth.AccessToken {
+	return &oauth.AccessToken{
+		Token:  u.TripitToken,
+		Secret: u.TripitSecret,
+	}
+}
+
+func (u *userConfig) TodoistOAuth2Token() *oauth2.Token {
+	return &oauth2.Token{AccessToken: u.TodoistToken}
+}
 
 func strptr(s string) *string { return &s }
 
 func main() {
 	// Authorization bits.
 	//tripit.Authorize()
+
+	// TODO(seanrees): point this at something other than google.com since it
+	// will eat the code= param if redirected to the country-specific site.
 	//token := todoist.Authorize()
 
-	trips := listTrips()
+	conf, err := readConfig("user.json")
+	if err != nil {
+		fmt.Printf("Unable to read configuration: %v\n", err)
+	}
+
+	trips := listTrips(conf)
 	for _, t := range trips {
-		//fmt.Printf("%#v\n", t)
 		start, err := time.Parse(time.RFC3339, t.StartDate+"T00:00:00Z")
 		if err != nil {
 			fmt.Printf("Could not parse %s: %v", t.StartDate, err)
@@ -33,17 +65,47 @@ func main() {
 
 		fmt.Printf("Trip within window: %s\n", t.DisplayName)
 
-		createProject(t.DisplayName)
+		createProject(conf, t.DisplayName)
 	}
+
 }
 
-func listTrips() []tripit.Trip {
-	at := &oauth.AccessToken{
-        // Fill this in from tripit.Authorize() results.
-		Token:  "",
-		Secret: "",
+func readConfig(filename string) (*userConfig, error) {
+	b, err := ioutil.ReadFile(filename)
+	if err != nil {
+		return nil, err
 	}
-	api := tripit.NewTripitV1(at)
+
+	uc := &userConfig{}
+	err = json.Unmarshal(b, &uc)
+	if err != nil {
+		return nil, err
+	}
+	return uc, nil
+}
+
+func writeConfig(uc *userConfig, filename string) error {
+	b, err := json.MarshalIndent(uc, "", "\t")
+	if err != nil {
+		return err
+	}
+	f, err := os.OpenFile(filename, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0700)
+	defer f.Close()
+	if err != nil {
+		return err
+	}
+	n, err := f.Write(b)
+	if err != nil {
+		return err
+	}
+	if l := len(b); l != n {
+		return fmt.Errorf("short write to %s, wrote %d of %d bytes", filename, n, l)
+	}
+	return nil
+}
+
+func listTrips(uc *userConfig) []tripit.Trip {
+	api := tripit.NewTripitV1API(uc.TripitOAuthAccessToken())
 	trips, err := api.List(&tripit.ListParameters{Traveler: "true"})
 	if err != nil {
 		fmt.Printf("Could not list trips: %v", err)
@@ -52,10 +114,9 @@ func listTrips() []tripit.Trip {
 	return trips
 }
 
-func createProject(tripName string) {
-    // Fill this in from todoist.Authorize().
-	t := &oauth2.Token{AccessToken: ""}
-	s := todoist.NewSyncV6API(t)
+func createProject(uc *userConfig, tripName string) {
+	// Fill this in from todoist.Authorize().
+	s := todoist.NewSyncV6API(uc.TodoistOAuth2Token())
 
 	name := "Trip: " + tripName
 	items := []string{

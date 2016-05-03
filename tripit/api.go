@@ -12,15 +12,15 @@ const (
 	ApiPath = "https://api.tripit.com/v1"
 )
 
-type TripitV1 struct {
+type TripitV1API struct {
 	accessToken *oauth.AccessToken
 }
 
-func NewTripitV1(at *oauth.AccessToken) *TripitV1 {
-	return &TripitV1{accessToken: at}
+func NewTripitV1API(at *oauth.AccessToken) *TripitV1API {
+	return &TripitV1API{accessToken: at}
 }
 
-func (t *TripitV1) makeClient() (*http.Client, error) {
+func (t *TripitV1API) makeClient() (*http.Client, error) {
 	c, err := buildConsumer().MakeHttpClient(t.accessToken)
 	if err != nil {
 		return nil, err
@@ -29,7 +29,7 @@ func (t *TripitV1) makeClient() (*http.Client, error) {
 	return c, nil
 }
 
-func (t *TripitV1) makeRequest(url string, obj interface{}) error {
+func (t *TripitV1API) makeRequest(url string, obj interface{}) error {
 	c, err := t.makeClient()
 	if err != nil {
 		return err
@@ -58,7 +58,7 @@ type ListParameters struct {
 }
 
 // Lists trips.
-func (t *TripitV1) List(p *ListParameters) ([]Trip, error) {
+func (t *TripitV1API) List(p *ListParameters) ([]Trip, error) {
 	path := ApiPath + "/list/trip"
 
 	if p != nil {
