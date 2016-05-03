@@ -6,15 +6,9 @@ import (
 	"log"
 )
 
-const (
-	// Registered to Sean Rees for Non-commercial use.
-	ConsumerKey    = ""
-	ConsumerSecret = ""
-)
-
 func buildConsumer() *oauth.Consumer {
 	c := oauth.NewConsumer(
-		ConsumerKey, ConsumerSecret,
+		consumerKey, consumerSecret,
 		oauth.ServiceProvider{
 			RequestTokenUrl:   "https://api.tripit.com/oauth/request_token",
 			AuthorizeTokenUrl: "https://www.tripit.com/oauth/authorize",

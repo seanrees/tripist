@@ -13,8 +13,8 @@ func buildConfig() *oauth2.Config {
 	oauth2.RegisterBrokenAuthHeaderProvider("https://todoist.com")
 
 	return &oauth2.Config{
-		ClientID:     "",
-		ClientSecret: "",
+		ClientID:     oauth2ClientID,
+		ClientSecret: oauth2ClientSecret,
 		Scopes:       []string{"data:read_write,data:delete,project:delete"},
 		RedirectURL:  "http://www.google.com",
 		Endpoint: oauth2.Endpoint{
