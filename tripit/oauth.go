@@ -20,9 +20,9 @@ func buildConsumer() *oauth.Consumer {
 	return c
 }
 
-func Authorize() {
+func Authorize() *oauth.AccessToken {
 	c := buildConsumer()
-	c.Debug(true)
+	//c.Debug(true)
 
 	requestToken, url, err := c.GetRequestTokenAndUrl("")
 	if err != nil {
@@ -36,18 +36,20 @@ func Authorize() {
 	verifyCode := ""
 	fmt.Scanln(&verifyCode)
 
-	accessToken, err := c.AuthorizeToken(requestToken, verifyCode)
+	at, err := c.AuthorizeToken(requestToken, verifyCode)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	fmt.Println("Access token: " + accessToken.Token)
-	fmt.Println("Secret:       " + accessToken.Secret)
+	fmt.Println("Access token: " + at.Token)
+	fmt.Println("Secret:       " + at.Secret)
 	fmt.Println("Additional data:")
-	for k, v := range accessToken.AdditionalData {
+	for k, v := range at.AdditionalData {
 		fmt.Printf("   %s = %s", k, v)
 	}
-	if len(accessToken.AdditionalData) == 0 {
+	if len(at.AdditionalData) == 0 {
 		fmt.Println("  none")
 	}
+
+	return at
 }

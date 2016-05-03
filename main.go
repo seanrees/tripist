@@ -3,6 +3,7 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
 	"fmt"
 	"github.com/mrjones/oauth"
 	"github.com/seanrees/tripist/todoist"
@@ -10,8 +11,14 @@ import (
 	"github.com/twinj/uuid"
 	"golang.org/x/oauth2"
 	"io/ioutil"
+	"log"
 	"os"
 	"time"
+)
+
+var (
+	authorizeTripit  = flag.Bool("authorize_tripit", false, "Perform Tripit Authorization. This is an exclusive flag.")
+	authorizeTodoist = flag.Bool("authorize_todoist", false, "Perform Todoist Authorization. This is an exclusive flag.")
 )
 
 type userConfig struct {
@@ -39,16 +46,31 @@ func (u *userConfig) TodoistOAuth2Token() *oauth2.Token {
 func strptr(s string) *string { return &s }
 
 func main() {
-	// Authorization bits.
-	//tripit.Authorize()
+	const configFilename = "user.json"
 
-	// TODO(seanrees): point this at something other than google.com since it
-	// will eat the code= param if redirected to the country-specific site.
-	//token := todoist.Authorize()
+	flag.Parse()
 
-	conf, err := readConfig("user.json")
-	if err != nil {
-		fmt.Printf("Unable to read configuration: %v\n", err)
+	conf := &userConfig{}
+	if _, err := os.Stat(configFilename); err == nil {
+		conf, err = readConfig(configFilename)
+		if err != nil {
+			log.Fatalf("Unable to read configuration: %v\n", err)
+		}
+	}
+
+	if *authorizeTripit {
+		at := tripit.Authorize()
+		conf.TripitToken = at.Token
+		conf.TripitSecret = at.Secret
+		writeConfig(conf, configFilename)
+		return
+	}
+
+	if *authorizeTodoist {
+		t := todoist.Authorize()
+		conf.TodoistToken = t.AccessToken
+		writeConfig(conf, configFilename)
+		return
 	}
 
 	trips := listTrips(conf)
@@ -78,10 +100,7 @@ func readConfig(filename string) (*userConfig, error) {
 
 	uc := &userConfig{}
 	err = json.Unmarshal(b, &uc)
-	if err != nil {
-		return nil, err
-	}
-	return uc, nil
+	return uc, err
 }
 
 func writeConfig(uc *userConfig, filename string) error {
