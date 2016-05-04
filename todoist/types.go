@@ -140,7 +140,7 @@ type Project struct {
 	IsDeleted         *int    `json:"is_deleted"`
 	IsArchived        *int    `json:"is_archived"`
 	ArchivedDate      *string `json:"archived_date"`
-	ArchivedTimestamp *int    `json:archived_timestamp"`
+	ArchivedTimestamp *int    `json:"archived_timestamp"`
 	InboxProject      *bool   `json:"inbox_project,*string"`
 	TeamInbox         *bool   `json:"team_inbox,*string"`
 }
