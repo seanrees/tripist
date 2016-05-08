@@ -6,9 +6,9 @@ import (
 	"flag"
 	"fmt"
 	"github.com/mrjones/oauth"
+	"github.com/seanrees/tripist/tasks"
 	"github.com/seanrees/tripist/todoist"
 	"github.com/seanrees/tripist/tripit"
-	"github.com/twinj/uuid"
 	"golang.org/x/oauth2"
 	"io/ioutil"
 	"log"
@@ -19,6 +19,8 @@ import (
 var (
 	authorizeTripit  = flag.Bool("authorize_tripit", false, "Perform Tripit Authorization. This is an exclusive flag.")
 	authorizeTodoist = flag.Bool("authorize_todoist", false, "Perform Todoist Authorization. This is an exclusive flag.")
+	travelWindowDays = flag.Int("travel_window_days", 45, "Number of days ahead to look for trips.")
+	checklistCSV     = flag.String("checklist_csv", "checklist.csv", "Travel checklist CSV file.")
 )
 
 type userConfig struct {
@@ -43,12 +45,13 @@ func (u *userConfig) TodoistOAuth2Token() *oauth2.Token {
 	return &oauth2.Token{AccessToken: u.TodoistToken}
 }
 
-func strptr(s string) *string { return &s }
-
 func main() {
 	const configFilename = "user.json"
 
 	flag.Parse()
+
+	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
+	log.SetOutput(os.Stderr)
 
 	conf := &userConfig{}
 	if _, err := os.Stat(configFilename); err == nil {
@@ -73,21 +76,27 @@ func main() {
 		return
 	}
 
+	checklist, err := tasks.Load(*checklistCSV)
+	if err != nil {
+		log.Fatalf("Unable to load travel checklist (%s): %v", *checklistCSV, err)
+	}
+
+	log.Printf("Loaded %s with %d tasks\n", *checklistCSV, len(checklist))
+
 	trips := listTrips(conf)
 	for _, t := range trips {
-		start, err := time.Parse(time.RFC3339, t.StartDate+"T00:00:00Z")
+		start, err := t.Start()
 		if err != nil {
 			fmt.Printf("Could not parse %s: %v", t.StartDate, err)
 		}
 
-		window := time.Now().AddDate(0, 0, 45)
+		window := time.Now().AddDate(0, 0, *travelWindowDays)
 		if start.After(window) {
 			continue
 		}
 
-		fmt.Printf("Trip within window: %s\n", t.DisplayName)
-
-		createProject(conf, t.DisplayName)
+		log.Printf("Trip within window: %s\n", t.DisplayName)
+		createProject(conf, t, checklist)
 	}
 
 }
@@ -133,55 +142,9 @@ func listTrips(uc *userConfig) []tripit.Trip {
 	return trips
 }
 
-func createProject(uc *userConfig, tripName string) {
+func createProject(uc *userConfig, trip tripit.Trip, checklist []tasks.Task) {
 	// Fill this in from todoist.Authorize().
 	s := todoist.NewSyncV6API(uc.TodoistOAuth2Token())
 
-	name := "Trip: " + tripName
-	items := []string{
-		"Pack clothes", // TODO: add how many days, wx suggestions?
-		"Pack electronics (Chromecast, chargers)",
-		"Pack toiletries",
-		"Clean litter box",
-		"Feed cats",
-		"Set heater appropriately",
-		"Pack essential documents",
-	}
-
-	// Check for pre-existing projects.
-	resp, err := s.Read([]string{todoist.Projects}, 0)
-	if err != nil {
-		fmt.Printf("Could not read Todoist projects: %v", err)
-	}
-	for _, p := range resp.Projects {
-		if *p.Name == name {
-			fmt.Printf("Project already exists, no work needed.\n")
-			return
-		}
-	}
-
-	fmt.Printf("Creating project: %q\n", name)
-
-	// Create a new project.
-	tempId := uuid.NewV4().String()
-	commands := todoist.Commands{todoist.WriteItem{
-		Type:   strptr(todoist.ProjectAdd),
-		TempId: strptr(tempId),
-		UUID:   strptr(uuid.NewV4().String()),
-		Args:   todoist.Project{Name: strptr(name)}}}
-
-	for _, i := range items {
-		commands = append(commands, todoist.WriteItem{
-			Type:   strptr(todoist.ItemAdd),
-			TempId: strptr(uuid.NewV4().String()),
-			UUID:   strptr(uuid.NewV4().String()),
-			Args: todoist.Item{
-				Content:   strptr(i),
-				ProjectId: strptr(tempId)}})
-	}
-
-	_, err = s.Write(commands)
-	if err != nil {
-		fmt.Printf("Could not create project: %v\n", err)
-	}
+	tasks.UpdateTrip(s, trip, checklist)
 }

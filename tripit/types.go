@@ -1,5 +1,7 @@
 package tripit
 
+import "time"
+
 type TripitResponse struct {
 	Timestamp int64 `json:"timestamp,string"`
 	NumBytes  int64 `json:"num_bytes,string"`
@@ -19,6 +21,13 @@ type Trip struct {
 	PrimaryLocationAddress Address
 	TripInvitees           []Invitee
 	TripPurposes           TripPurpose
+}
+
+func (t *Trip) Start() (time.Time, error) {
+	return time.Parse(time.RFC3339, t.StartDate+"T00:00:00Z")
+}
+func (t *Trip) End() (time.Time, error) {
+	return time.Parse(time.RFC3339, t.EndDate+"T00:00:00Z")
 }
 
 type Address struct {

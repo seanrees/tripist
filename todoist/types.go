@@ -15,7 +15,12 @@ const (
 
 	// Types that can be written.
 	ItemAdd    = "item_add"
+	ItemDelete = "item_delete"
+	ItemUpdate = "item_update"
 	ProjectAdd = "project_add"
+
+	DateFormat    = "01/02/2006"
+	DueDateFormat = "2006-01-02T15:04"
 )
 
 // This is like the %+v verb in fmt, but dereferences pointers.
@@ -78,6 +83,10 @@ func (i WriteItem) String() string {
 	return stringify(i)
 }
 
+type DeleteItems struct {
+	Ids []int `json:"ids"`
+}
+
 type Commands []WriteItem
 
 type WriteResponse struct {
@@ -98,7 +107,7 @@ type Item struct {
 	// This field is normally an Integer, but in a Write, can be a *string-ified UUID.
 	ProjectId      interface{} `json:"project_id"`
 	Content        *string     `json:"content"`
-	DateString     *string     `json:"date_*string"`
+	DateString     *string     `json:"date_string"`
 	DateLang       *string     `json:"date_lang"`
 	DueDateUTC     *string     `json:"due_date_utc"`
 	Priority       *int        `json:"priority"`
@@ -121,11 +130,11 @@ func (i Item) String() string {
 	return stringify(i)
 }
 func (i Item) ProjectIdInt() int {
-	v, ok := i.ProjectId.(int)
+	v, ok := i.ProjectId.(float64) // Sigh, this is what Go marshals it as.
 	if !ok {
 		return -1
 	}
-	return v
+	return int(v)
 }
 
 type Project struct {
