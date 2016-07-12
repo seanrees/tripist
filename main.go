@@ -142,7 +142,7 @@ func listTrips(uc *userConfig) []tripit.Trip {
 	return trips
 }
 
-func createProject(uc *userConfig, trip tripit.Trip, checklist []tasks.Task) {
+func createProject(uc *userConfig, trip tripit.Trip, checklist []tasks.ChecklistItem) {
 	// Fill this in from todoist.Authorize().
 	s := todoist.NewSyncV6API(uc.TodoistOAuth2Token())
 

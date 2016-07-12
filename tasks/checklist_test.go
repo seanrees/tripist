@@ -9,35 +9,35 @@ import (
 func TestLoad(t *testing.T) {
 	cases := []struct {
 		csv  string
-		want []Task
+		want []ChecklistItem
 		err  bool
 	}{{
 		csv:  "",
-		want: []Task{},
+		want: []ChecklistItem{},
 		err:  false,
 	}, {
 		csv:  "foo,1,1",
-		want: []Task{{"foo", 1, 1}},
+		want: []ChecklistItem{{"foo", 1, 1}},
 		err:  false,
 	}, {
 		csv:  "foo,1,1\nbar,1,2",
-		want: []Task{{"foo", 1, 1}, {"bar", 1, 2}},
+		want: []ChecklistItem{{"foo", 1, 1}, {"bar", 1, 2}},
 		err:  false,
 	}, {
 		csv:  "foo,1,not-a-num",
-		want: []Task{},
+		want: []ChecklistItem{},
 		err:  true,
 	}, {
 		csv:  "foo\nbar,1,1",
-		want: []Task{},
+		want: []ChecklistItem{},
 		err:  true,
 	}, {
 		csv:  "foo,1,1\nnot-enough-fields\nbar,3,2",
-		want: []Task{{"foo", 1, 1}, {"bar", 3, 2}},
+		want: []ChecklistItem{{"foo", 1, 1}, {"bar", 3, 2}},
 		err:  true,
 	}, {
 		csv:  "foo,0,1\nbar,5,1\nbaz,1,1", // Indent out of range.
-		want: []Task{{"baz", 1, 1}},
+		want: []ChecklistItem{{"baz", 1, 1}},
 		err:  true,
 	}}
 

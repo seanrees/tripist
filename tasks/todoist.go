@@ -12,7 +12,7 @@ import (
 
 func PTR(s string) *string { return &s }
 
-func UpdateTrip(api *todoist.SyncV6API, tt tripit.Trip, tasks []Task) error {
+func UpdateTrip(api *todoist.SyncV6API, tt tripit.Trip, items []ChecklistItem) error {
 	name := fmt.Sprintf("Trip: %s", tt.DisplayName)
 
 	var commands todoist.Commands
@@ -45,7 +45,7 @@ func UpdateTrip(api *todoist.SyncV6API, tt tripit.Trip, tasks []Task) error {
 
 	checklist := make(map[string]bool)
 	present := make(map[string]bool)
-	for _, t := range tasks {
+	for _, t := range items {
 		checklist[t.Template] = true
 	}
 	for _, i := range itemsPresent {
@@ -53,7 +53,7 @@ func UpdateTrip(api *todoist.SyncV6API, tt tripit.Trip, tasks []Task) error {
 	}
 	missing := diff(checklist, present)
 
-	for _, t := range tasks {
+	for _, t := range items {
 		if v, _ := missing[t.Template]; !v {
 			due := t.Due(start)
 			commands = append(commands, createItem(tempId, t, due))
@@ -61,7 +61,7 @@ func UpdateTrip(api *todoist.SyncV6API, tt tripit.Trip, tasks []Task) error {
 	}
 
 	for _, i := range itemsPresent {
-		for _, t := range tasks {
+		for _, t := range items {
 			if t.Template == *i.Content {
 				due := t.Due(start)
 				i.DateString = PTR(due.Format(todoist.DateFormat))
@@ -123,16 +123,16 @@ func listItems(api *todoist.SyncV6API, p *todoist.Project) ([]todoist.Item, erro
 	return ret, nil
 }
 
-func createItem(projId string, t Task, due time.Time) todoist.WriteItem {
-	log.Printf("Creating task %q due %s", t.Template, due.Format(todoist.DueDateFormat))
+func createItem(projId string, ci ChecklistItem, due time.Time) todoist.WriteItem {
+	log.Printf("Creating task %q due %s", ci.Template, due.Format(todoist.DueDateFormat))
 
 	return todoist.WriteItem{
 		Type:   PTR(todoist.ItemAdd),
 		TempId: PTR(uuid.NewV4().String()),
 		UUID:   PTR(uuid.NewV4().String()),
 		Args: todoist.Item{
-			Content:    PTR(t.Template),
-			Indent:     &t.Indent,
+			Content:    PTR(ci.Template),
+			Indent:     &ci.Indent,
 			DateString: PTR(due.Format(todoist.DateFormat)),
 			DueDateUTC: PTR(due.UTC().Format(todoist.DueDateFormat)),
 			ProjectId:  PTR(projId)}}

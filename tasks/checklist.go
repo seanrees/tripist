@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-type Task struct {
+type ChecklistItem struct {
 	Template string
 
 	Indent int
@@ -20,12 +20,12 @@ type Task struct {
 	Days int
 }
 
-func (t Task) Due(start time.Time) time.Time {
+func (t ChecklistItem) Due(start time.Time) time.Time {
 	// Make these due on the day, at 20:00.
 	return start.Add(time.Duration(t.Days) * 24 * time.Hour).Add(20 * time.Hour)
 }
 
-func Load(templateFilename string) ([]Task, error) {
+func Load(templateFilename string) ([]ChecklistItem, error) {
 	f, err := os.Open(templateFilename)
 	if err != nil {
 		return nil, err
@@ -33,9 +33,9 @@ func Load(templateFilename string) ([]Task, error) {
 	return load(f)
 }
 
-func load(ior io.Reader) ([]Task, error) {
+func load(ior io.Reader) ([]ChecklistItem, error) {
 	var errors []string
-	var ret []Task
+	var ret []ChecklistItem
 	r := csv.NewReader(ior)
 	for l := 1; ; l++ {
 		rec, err := r.Read()
@@ -70,7 +70,7 @@ func load(ior io.Reader) ([]Task, error) {
 			continue
 		}
 
-		ret = append(ret, Task{
+		ret = append(ret, ChecklistItem{
 			Template: rec[0],
 			Indent:   i,
 			Days:     d,
