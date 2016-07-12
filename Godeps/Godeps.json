@@ -1,0 +1,28 @@
+{
+	"ImportPath": "github.com/seanrees/tripist",
+	"GoVersion": "go1.6",
+	"GodepVersion": "v74",
+	"Deps": [
+		{
+			"ImportPath": "github.com/mrjones/oauth",
+			"Rev": "31f1e8e5addda51bc50ebfc8bb930d4642372654"
+		},
+		{
+			"ImportPath": "github.com/twinj/uuid",
+			"Comment": "0.10.0-94-gb505f2c",
+			"Rev": "b505f2cca343b7b21416b27b1f2ad88469800892"
+		},
+		{
+			"ImportPath": "golang.org/x/net/context",
+			"Rev": "f841c39de738b1d0df95b5a7187744f0e03d8112"
+		},
+		{
+			"ImportPath": "golang.org/x/oauth2",
+			"Rev": "7357e96168422ba1e6e7f21075713b72d58764e7"
+		},
+		{
+			"ImportPath": "golang.org/x/oauth2/internal",
+			"Rev": "7357e96168422ba1e6e7f21075713b72d58764e7"
+		}
+	]
+}
