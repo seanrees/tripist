@@ -142,9 +142,37 @@ func listTrips(uc *userConfig) []tripit.Trip {
 	return trips
 }
 
-func createProject(uc *userConfig, trip tripit.Trip, checklist []tasks.ChecklistItem) {
+func createProject(uc *userConfig, trip tripit.Trip, cl []tasks.ChecklistItem) {
 	// Fill this in from todoist.Authorize().
 	s := todoist.NewSyncV6API(uc.TodoistOAuth2Token())
 
-	tasks.UpdateTrip(s, trip, checklist)
+	start, err := trip.Start()
+	if err != nil {
+		fmt.Printf("Unable to get start date from trip: %v\n", err)
+		return
+	}
+
+	name := fmt.Sprintf("Trip: %s", trip.DisplayName)
+	p := tasks.Project{
+		Name:  name,
+		Tasks: tasks.Expand(cl, start)}
+
+	rp, found, err := s.LoadProject(name)
+	if err != nil {
+		fmt.Printf("Could not load remote project: %v\n", err)
+	}
+	if found {
+		diffs := rp.DiffTasks(p)
+		fmt.Printf("Found, computed %d diffs\n", len(diffs))
+
+		err = s.UpdateProject(rp, diffs)
+		if err != nil {
+			fmt.Printf("Unable to update project: %v\n", err)
+		}
+	} else {
+		err = s.CreateProject(p)
+		if err != nil {
+			fmt.Printf("Unable to create project: %v\n", err)
+		}
+	}
 }

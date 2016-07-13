@@ -19,8 +19,14 @@ const (
 	ItemUpdate = "item_update"
 	ProjectAdd = "project_add"
 
-	DateFormat    = "01/02/2006"
-	DueDateFormat = "2006-01-02T15:04"
+	DateFormat = "01/02/2006"
+
+	// Todoist's API is pretty inconsistent. This is another one: you create
+	// tasks with DueDateUTC in DueDateFormatForWrite. These get reported back
+	// in DueDateFormatForRead, which is just like Go's time.RFC1123Z except
+	// missing a comma (wtf.)
+	DueDateFormatForRead  = "Mon 02 Jan 2006 15:04:05 -0700"
+	DueDateFormatForWrite = "2006-01-02T15:04"
 )
 
 // This is like the %+v verb in fmt, but dereferences pointers.
@@ -90,11 +96,11 @@ type DeleteItems struct {
 type Commands []WriteItem
 
 type WriteResponse struct {
-	SequenceNumber *int `json:"seq_no"`
-	TempIdMapping  map[string]int
+	SequenceNumber *int           `json:"seq_no"`
+	TempIdMapping  map[string]int `json:"temp_id_mapping"`
 
-	// It's one of *string ("ok") or a map[*string]*string for errors. Wtf Todoist?
-	SyncStatus interface{}
+	// Map of the Command UUID to one of either a string ("ok") or to another map[string]interface{}.
+	SyncStatus map[string]interface{} `json:"sync_status"`
 }
 
 func (i WriteResponse) String() string {
@@ -156,4 +162,10 @@ type Project struct {
 
 func (i Project) String() string {
 	return stringify(i)
+}
+
+// For riding along when interfacing with the local tasks API.
+type projectItems struct {
+	ProjectId int
+	Items     []Item
 }

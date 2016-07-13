@@ -20,9 +20,11 @@ type ChecklistItem struct {
 	Days int
 }
 
-func (t ChecklistItem) Due(start time.Time) time.Time {
-	// Make these due on the day, at 20:00.
-	return start.Add(time.Duration(t.Days) * 24 * time.Hour).Add(20 * time.Hour)
+func (t ChecklistItem) Due(due time.Time) time.Time {
+	// Add (probably subtract) the relevant t.Days from the given due time, then add back
+	// 20 hours to actually complete the task. This works best with tasks due at the *start*
+	// of some day, e.g; at 00:00.
+	return due.Add(time.Duration(t.Days) * 24 * time.Hour).Add(20 * time.Hour)
 }
 
 func Load(templateFilename string) ([]ChecklistItem, error) {
