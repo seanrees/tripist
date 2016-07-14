@@ -19,15 +19,15 @@ const (
 
 func PTR(s string) *string { return &s }
 
-type SyncV6API struct {
+type SyncV7API struct {
 	token *oauth2.Token
 }
 
-func NewSyncV6API(t *oauth2.Token) *SyncV6API {
-	return &SyncV6API{token: t}
+func NewSyncV7API(t *oauth2.Token) *SyncV7API {
+	return &SyncV7API{token: t}
 }
 
-func (s *SyncV6API) makeRequest(path string, data url.Values, obj interface{}) error {
+func (s *SyncV7API) makeRequest(path string, data url.Values, obj interface{}) error {
 	c := buildConfig().Client(oauth2.NoContext, s.token)
 	resp, err := c.PostForm(path, data)
 
@@ -53,7 +53,7 @@ func (s *SyncV6API) makeRequest(path string, data url.Values, obj interface{}) e
 //
 // sequenceNumber should be zero or a ReadResponse.SequenceNumber if you desire an
 // incremental read.
-func (s *SyncV6API) Read(types []string, sequenceNumber int) (ReadResponse, error) {
+func (s *SyncV7API) Read(types []string, sequenceNumber int) (ReadResponse, error) {
 	resp := ReadResponse{}
 	params := url.Values{}
 	params.Add("token", s.token.AccessToken)
@@ -71,7 +71,7 @@ func (s *SyncV6API) Read(types []string, sequenceNumber int) (ReadResponse, erro
 	return resp, nil
 }
 
-func (s *SyncV6API) Write(c Commands) (WriteResponse, error) {
+func (s *SyncV7API) Write(c Commands) (WriteResponse, error) {
 	resp := WriteResponse{}
 	params := url.Values{}
 	params.Add("token", s.token.AccessToken)
@@ -126,7 +126,7 @@ func (s *SyncV6API) Write(c Commands) (WriteResponse, error) {
 	return resp, nil
 }
 
-func (s *SyncV6API) listItems(p *Project) ([]Item, error) {
+func (s *SyncV7API) listItems(p *Project) ([]Item, error) {
 	resp, err := s.Read([]string{Items}, 0)
 	if err != nil {
 		log.Printf("Could not read Todoist items: %v", err)
@@ -145,7 +145,7 @@ func (s *SyncV6API) listItems(p *Project) ([]Item, error) {
 	return ret, nil
 }
 
-func (s *SyncV6API) findProject(name string) (*Project, error) {
+func (s *SyncV7API) findProject(name string) (*Project, error) {
 	resp, err := s.Read([]string{Projects}, 0)
 	if err != nil {
 		log.Printf("Could not read Todoist projects: %v", err)
@@ -160,7 +160,7 @@ func (s *SyncV6API) findProject(name string) (*Project, error) {
 	return nil, nil
 }
 
-func (s *SyncV6API) createProject(name, tempId string) WriteItem {
+func (s *SyncV7API) createProject(name, tempId string) WriteItem {
 	return WriteItem{
 		Type:   PTR(ProjectAdd),
 		TempId: PTR(tempId),
@@ -168,7 +168,7 @@ func (s *SyncV6API) createProject(name, tempId string) WriteItem {
 		Args:   Project{Name: PTR(name)}}
 }
 
-func (s *SyncV6API) createItem(projId string, t tasks.Task) WriteItem {
+func (s *SyncV7API) createItem(projId string, t tasks.Task) WriteItem {
 	log.Printf("Creating task %q due %s", t.Content, t.DueDate.Format(DueDateFormatForWrite))
 
 	return WriteItem{
@@ -183,7 +183,7 @@ func (s *SyncV6API) createItem(projId string, t tasks.Task) WriteItem {
 			ProjectId:  &projId}}
 }
 
-func (s *SyncV6API) updateItem(i Item) WriteItem {
+func (s *SyncV7API) updateItem(i Item) WriteItem {
 	return WriteItem{
 		Type:   PTR(ItemUpdate),
 		TempId: PTR(uuid.NewV4().String()),
@@ -192,7 +192,7 @@ func (s *SyncV6API) updateItem(i Item) WriteItem {
 }
 
 // Returns a tasks.Project, whether or not it was found, and any error.
-func (s *SyncV6API) LoadProject(name string) (tasks.Project, bool, error) {
+func (s *SyncV7API) LoadProject(name string) (tasks.Project, bool, error) {
 	ret := tasks.Project{Name: name}
 	found := false
 
@@ -227,7 +227,7 @@ func (s *SyncV6API) LoadProject(name string) (tasks.Project, bool, error) {
 	return ret, found, nil
 }
 
-func (s *SyncV6API) CreateProject(p tasks.Project) error {
+func (s *SyncV7API) CreateProject(p tasks.Project) error {
 	tempId := uuid.NewV4().String()
 
 	cmds := Commands{s.createProject(p.Name, tempId)}
@@ -239,7 +239,7 @@ func (s *SyncV6API) CreateProject(p tasks.Project) error {
 	return err
 }
 
-func (s *SyncV6API) UpdateProject(p tasks.Project, diffs []tasks.Diff) error {
+func (s *SyncV7API) UpdateProject(p tasks.Project, diffs []tasks.Diff) error {
 	tp, ok := p.External.(*projectItems)
 	if !ok {
 		return fmt.Errorf("missing or invalid external project pointer on %q", p.Name)

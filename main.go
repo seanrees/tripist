@@ -144,7 +144,7 @@ func listTrips(uc *userConfig) []tripit.Trip {
 
 func createProject(uc *userConfig, trip tripit.Trip, cl []tasks.ChecklistItem) {
 	// Fill this in from todoist.Authorize().
-	s := todoist.NewSyncV6API(uc.TodoistOAuth2Token())
+	todoapi := todoist.NewSyncV7API(uc.TodoistOAuth2Token())
 
 	start, err := trip.Start()
 	if err != nil {
@@ -157,7 +157,7 @@ func createProject(uc *userConfig, trip tripit.Trip, cl []tasks.ChecklistItem) {
 		Name:  name,
 		Tasks: tasks.Expand(cl, start)}
 
-	rp, found, err := s.LoadProject(name)
+	rp, found, err := todoapi.LoadProject(name)
 	if err != nil {
 		fmt.Printf("Could not load remote project: %v\n", err)
 	}
@@ -165,12 +165,12 @@ func createProject(uc *userConfig, trip tripit.Trip, cl []tasks.ChecklistItem) {
 		diffs := rp.DiffTasks(p)
 		fmt.Printf("Found, computed %d diffs\n", len(diffs))
 
-		err = s.UpdateProject(rp, diffs)
+		err = todoapi.UpdateProject(rp, diffs)
 		if err != nil {
 			fmt.Printf("Unable to update project: %v\n", err)
 		}
 	} else {
-		err = s.CreateProject(p)
+		err = todoapi.CreateProject(p)
 		if err != nil {
 			fmt.Printf("Unable to create project: %v\n", err)
 		}
