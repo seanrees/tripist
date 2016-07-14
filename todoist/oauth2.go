@@ -12,10 +12,10 @@ func buildConfig() *oauth2.Config {
 	oauth2.RegisterBrokenAuthHeaderProvider("https://todoist.com")
 
 	return &oauth2.Config{
-		ClientID:     oauth2ClientID,
-		ClientSecret: oauth2ClientSecret,
+		ClientID:     Oauth2ClientID,
+		ClientSecret: Oauth2ClientSecret,
 		Scopes:       []string{"data:read_write,data:delete,project:delete"},
-		RedirectURL: "https://freyr.erifax.org/tripist/",
+		RedirectURL:  "https://freyr.erifax.org/tripist/",
 		Endpoint: oauth2.Endpoint{
 			AuthURL:  "https://todoist.com/oauth/authorize",
 			TokenURL: "https://todoist.com/oauth/access_token",

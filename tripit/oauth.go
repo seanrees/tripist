@@ -8,7 +8,7 @@ import (
 
 func buildConsumer() *oauth.Consumer {
 	c := oauth.NewConsumer(
-		consumerKey, consumerSecret,
+		ConsumerKey, ConsumerSecret,
 		oauth.ServiceProvider{
 			RequestTokenUrl:   "https://api.tripit.com/oauth/request_token",
 			AuthorizeTokenUrl: "https://www.tripit.com/oauth/authorize",

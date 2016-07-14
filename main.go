@@ -34,6 +34,13 @@ type userConfig struct {
 	TodoistToken string
 }
 
+type tripistConfig struct {
+	TripitAPIKey        string
+	TripitAPISecret     string
+	TodoistClientID     string
+	TodoistClientSecret string
+}
+
 func (u *userConfig) TripitOAuthAccessToken() *oauth.AccessToken {
 	return &oauth.AccessToken{
 		Token:  u.TripitToken,
@@ -47,6 +54,7 @@ func (u *userConfig) TodoistOAuth2Token() *oauth2.Token {
 
 func main() {
 	const configFilename = "user.json"
+	const tripistConfigFilename = "tripist.json"
 
 	flag.Parse()
 
@@ -59,6 +67,12 @@ func main() {
 		if err != nil {
 			log.Fatalf("Unable to read configuration: %v\n", err)
 		}
+	}
+
+	if err := readTripistConfig(tripistConfigFilename); err != nil {
+		log.Println("Using built-in keys.")
+	} else {
+		log.Printf("Loaded API keys from %s", tripistConfigFilename)
 	}
 
 	if *authorizeTripit {
@@ -103,6 +117,27 @@ func readConfig(filename string) (*userConfig, error) {
 	uc := &userConfig{}
 	err = json.Unmarshal(b, &uc)
 	return uc, err
+}
+
+func readTripistConfig(filename string) error {
+	b, err := ioutil.ReadFile(filename)
+	if err != nil {
+		return err
+	}
+
+	tc := &tripistConfig{}
+	err = json.Unmarshal(b, &tc)
+	if err != nil {
+		return err
+	}
+
+	// Copy in parameters.
+	tripit.ConsumerKey = tc.TripitAPIKey
+	tripit.ConsumerSecret = tc.TripitAPISecret
+	todoist.Oauth2ClientID = tc.TodoistClientID
+	todoist.Oauth2ClientSecret = tc.TodoistClientSecret
+
+	return nil
 }
 
 func writeConfig(uc *userConfig, filename string) error {

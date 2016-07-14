@@ -1,7 +1,7 @@
 package tripit
 
-const (
+var (
 	// https://www.tripit.com/developer to register for an API key.
-	consumerKey    = ""
-	consumerSecret = ""
+	ConsumerKey    = ""
+	ConsumerSecret = ""
 )
