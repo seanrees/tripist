@@ -82,6 +82,8 @@ func (s *SyncV7API) Write(c Commands) (WriteResponse, error) {
 	}
 	params.Add("commands", string(cmds))
 
+	log.Printf("Writing %d commands to Todoist", len(c))
+
 	if err := s.makeRequest(ApiPath, params, &resp); err != nil {
 		return resp, err
 	}
@@ -197,7 +199,11 @@ func (s *SyncV7API) createProject(name, tempId string) WriteItem {
 }
 
 func (s *SyncV7API) createItem(projId string, t tasks.Task) WriteItem {
-	log.Printf("Creating task %q due %s", t.Content, t.DueDate.Format(DueDateFormatForWrite))
+	log.Printf("Creating task %q (pos=%d) due %s", t.Content, t.Position, t.DueDate.Format(DueDateFormatForWrite))
+
+	// Todoist does not deal well with ItemOrder = 0; it won't honour order with
+	// something at zero.
+	pos := t.Position + 1
 
 	return WriteItem{
 		Type:   PTR(ItemAdd),
@@ -206,12 +212,24 @@ func (s *SyncV7API) createItem(projId string, t tasks.Task) WriteItem {
 		Args: Item{
 			Content:    &t.Content,
 			Indent:     &t.Indent,
+			ItemOrder:  &pos,
 			DateString: PTR(t.DueDate.Format(DateFormat)),
 			DueDateUTC: PTR(t.DueDate.Format(DueDateFormatForWrite)),
 			ProjectId:  &projId}}
 }
 
-func (s *SyncV7API) updateItem(i Item) WriteItem {
+func (s *SyncV7API) updateItem(i Item, t tasks.Task) WriteItem {
+	log.Printf("Updating task %q (pos=%d) due %s", t.Content, t.Position, t.DueDate.Format(DueDateFormatForWrite))
+
+	// Todoist does not deal well with ItemOrder = 0; it won't honour order with
+	// something at zero.
+	pos := t.Position + 1
+
+	i.DateString = PTR(t.DueDate.Format(DateFormat))
+	i.DueDateUTC = PTR(t.DueDate.Format(DueDateFormatForWrite))
+	i.Indent = &t.Indent
+	i.ItemOrder = &pos
+
 	return WriteItem{
 		Type:   PTR(ItemUpdate),
 		TempId: PTR(uuid.NewV4().String()),
@@ -245,9 +263,10 @@ func (s *SyncV7API) LoadProject(name string) (tasks.Project, bool, error) {
 		}
 
 		ret.Tasks = append(ret.Tasks, tasks.Task{
-			Content: *i.Content,
-			DueDate: due,
-			Indent:  *i.Indent})
+			Content:  *i.Content,
+			DueDate:  due,
+			Indent:   *i.Indent,
+			Position: (*i.ItemOrder) - 1})
 	}
 
 	ret.External = &projectItems{ProjectId: *p.Id, Items: li}
@@ -287,14 +306,10 @@ func (s *SyncV7API) UpdateProject(p tasks.Project, diffs []tasks.Diff) error {
 		case tasks.Changed:
 			for _, i := range tp.Items {
 				if *i.Content == d.Task.Content {
-					i.DateString = PTR(d.Task.DueDate.Format(DateFormat))
-					i.DueDateUTC = PTR(d.Task.DueDate.Format(DueDateFormatForWrite))
-					i.Indent = &d.Task.Indent
-					cmds = append(cmds, s.updateItem(i))
+					cmds = append(cmds, s.updateItem(i, d.Task))
 					break
 				}
 			}
-
 		case tasks.Removed:
 			log.Printf("Not removing missing task: %q", d.Task.Content)
 		}

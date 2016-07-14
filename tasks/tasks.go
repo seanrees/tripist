@@ -2,7 +2,6 @@ package tasks
 
 import (
 	"fmt"
-	"log"
 	"reflect"
 	"time"
 )
@@ -26,6 +25,8 @@ type Project struct {
 	External interface{}
 }
 
+func (p Project) Empty() bool { return len(p.Tasks) == 0 }
+
 type Task struct {
 	// The content of the task, e.g; "Buy milk"
 	Content string
@@ -36,11 +37,12 @@ type Task struct {
 	// Indentation level for the task
 	// TODO(srees): remove this? This is essentially nesting projects, maybe just do that?
 	Indent int
+
+	// Position of the task
+	Position int
 }
 
 type Diff struct {
-	Position int
-
 	Type int
 	Task Task
 }
@@ -51,12 +53,12 @@ func (d Diff) String() string {
 	case Added:
 		t = "add"
 	case Removed:
-		t = "rem"
+		t = "remove"
 	case Changed:
-		t = "chg"
+		t = "change"
 	}
 
-	return fmt.Sprintf("{pos=%d [%s] task=%v}", d.Position, t, d.Task)
+	return fmt.Sprintf("{type=%s task=%v}", t, d.Task)
 }
 
 func (p Project) DiffTasks(other Project) []Diff {
@@ -70,15 +72,10 @@ func (p Project) DiffTasks(other Project) []Diff {
 	ret = append(ret, findDiffs(p.Tasks, ot, Removed)...)
 
 	// Changed
-	for i, t := range p.Tasks {
+	for _, t := range p.Tasks {
 		if task, ok := ot[t.Content]; ok {
 			if !reflect.DeepEqual(t, task) {
-				log.Printf("%v != %v\n", t, task)
-				ret = append(ret, Diff{
-					Position: i,
-					Type:     Changed,
-					Task:     task,
-				})
+				ret = append(ret, Diff{Type: Changed, Task: task})
 			}
 		}
 	}
@@ -88,12 +85,9 @@ func (p Project) DiffTasks(other Project) []Diff {
 
 func findDiffs(in []Task, table map[string]Task, typ int) []Diff {
 	var ret []Diff
-	for pos, t := range in {
+	for _, t := range in {
 		if _, found := table[t.Content]; !found {
-			ret = append(ret, Diff{
-				Position: pos,
-				Type:     typ,
-				Task:     t})
+			ret = append(ret, Diff{Type: typ, Task: t})
 		}
 	}
 	return ret

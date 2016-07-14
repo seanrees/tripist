@@ -8,12 +8,12 @@ import (
 )
 
 // Make it so we can compare DiffTasks output consistently without worrying about order.
-type byPosTypeContent []Diff
+type byTypeAndContent []Diff
 
-func (t byPosTypeContent) Len() int      { return len(t) }
-func (t byPosTypeContent) Swap(i, j int) { t[i], t[j] = t[j], t[i] }
-func (t byPosTypeContent) Less(i, j int) bool {
-	return t[i].Position < t[j].Position || t[i].Type < t[j].Type || strings.Compare(t[i].Task.Content, t[j].Task.Content) < 0
+func (t byTypeAndContent) Len() int      { return len(t) }
+func (t byTypeAndContent) Swap(i, j int) { t[i], t[j] = t[j], t[i] }
+func (t byTypeAndContent) Less(i, j int) bool {
+	return t[i].Type < t[j].Type || strings.Compare(t[i].Task.Content, t[j].Task.Content) < 0
 }
 
 func TestDiffTasks(t *testing.T) {
@@ -42,35 +42,35 @@ func TestDiffTasks(t *testing.T) {
 		p:     p1,
 		other: p2,
 		want: []Diff{
-			{Position: 0, Type: Added, Task: p2.Tasks[0]},
-			{Position: 1, Type: Added, Task: p2.Tasks[1]},
-			{Position: 0, Type: Removed, Task: p1.Tasks[0]},
-			{Position: 1, Type: Removed, Task: p1.Tasks[1]},
+			{Type: Added, Task: p2.Tasks[0]},
+			{Type: Added, Task: p2.Tasks[1]},
+			{Type: Removed, Task: p1.Tasks[0]},
+			{Type: Removed, Task: p1.Tasks[1]},
 		},
 	}, {
 		p:     p1,
 		other: empty,
 		want: []Diff{
-			{Position: 0, Type: Removed, Task: p1.Tasks[0]},
-			{Position: 1, Type: Removed, Task: p1.Tasks[1]},
+			{Type: Removed, Task: p1.Tasks[0]},
+			{Type: Removed, Task: p1.Tasks[1]},
 		},
 	}, {
 		p:     empty,
 		other: p2,
 		want: []Diff{
-			{Position: 0, Type: Added, Task: p2.Tasks[0]},
-			{Position: 1, Type: Added, Task: p2.Tasks[1]},
+			{Type: Added, Task: p2.Tasks[0]},
+			{Type: Added, Task: p2.Tasks[1]},
 		},
 	}, {
 		p:     p1,
 		other: p1b,
-		want:  []Diff{{Position: 1, Type: Changed, Task: p1b.Tasks[1]}},
+		want:  []Diff{{Type: Changed, Task: p1b.Tasks[1]}},
 	}}
 
 	for _, c := range cases {
 		got := c.p.DiffTasks(c.other)
-		sort.Sort(byPosTypeContent(got))
-		sort.Sort(byPosTypeContent(c.want))
+		sort.Sort(byTypeAndContent(got))
+		sort.Sort(byTypeAndContent(c.want))
 
 		if !reflect.DeepEqual(got, c.want) {
 			t.Errorf("DiffTasks(%v) == %v, want %v", c.other, got, c.want)
@@ -95,15 +95,15 @@ func TestFindDiffs(t *testing.T) {
 			"extra":   Task{Content: "extra"},
 		},
 		typ:  Added,
-		want: []Diff{{Position: 1, Type: Added, Task: Task{Content: "not present"}}},
+		want: []Diff{{Type: Added, Task: Task{Content: "not present"}}},
 	}, {
 		// Testing pass through of typ and correct position.
 		tasks: []Task{{Content: "not present"}, {Content: "present"}, {Content: "also not present"}},
 		table: map[string]Task{"present": Task{Content: "present"}},
 		typ:   Removed,
 		want: []Diff{
-			{Position: 0, Type: Removed, Task: Task{Content: "not present"}},
-			{Position: 2, Type: Removed, Task: Task{Content: "also not present"}}},
+			{Type: Removed, Task: Task{Content: "not present"}},
+			{Type: Removed, Task: Task{Content: "also not present"}}},
 	}}
 
 	for _, c := range cases {

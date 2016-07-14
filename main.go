@@ -19,7 +19,7 @@ import (
 var (
 	authorizeTripit  = flag.Bool("authorize_tripit", false, "Perform Tripit Authorization. This is an exclusive flag.")
 	authorizeTodoist = flag.Bool("authorize_todoist", false, "Perform Todoist Authorization. This is an exclusive flag.")
-	travelWindowDays = flag.Int("travel_window_days", 45, "Number of days ahead to look for trips.")
+	taskCutoffDays   = flag.Int("task_cutoff_days", 7, "Create tasks upto this many days in advance of their due date.")
 	checklistCSV     = flag.String("checklist_csv", "checklist.csv", "Travel checklist CSV file.")
 )
 
@@ -84,19 +84,12 @@ func main() {
 	log.Printf("Loaded %s with %d tasks\n", *checklistCSV, len(checklist))
 
 	trips := listTrips(conf)
+	window := time.Now().AddDate(0, 0, *taskCutoffDays)
+
+	log.Printf("Creating tasks up to cutoff %s", window)
+
 	for _, t := range trips {
-		start, err := t.Start()
-		if err != nil {
-			fmt.Printf("Could not parse %s: %v", t.StartDate, err)
-		}
-
-		window := time.Now().AddDate(0, 0, *travelWindowDays)
-		if start.After(window) {
-			continue
-		}
-
-		log.Printf("Trip within window: %s\n", t.DisplayName)
-		createProject(conf, t, checklist)
+		createProject(conf, t, checklist, window)
 	}
 
 }
@@ -136,43 +129,49 @@ func listTrips(uc *userConfig) []tripit.Trip {
 	api := tripit.NewTripitV1API(uc.TripitOAuthAccessToken())
 	trips, err := api.List(&tripit.ListParameters{Traveler: "true"})
 	if err != nil {
-		fmt.Printf("Could not list trips: %v", err)
+		log.Printf("Could not list trips: %v", err)
 	}
 
 	return trips
 }
 
-func createProject(uc *userConfig, trip tripit.Trip, cl []tasks.ChecklistItem) {
+func createProject(uc *userConfig, trip tripit.Trip, cl []tasks.ChecklistItem, taskCutoff time.Time) {
 	// Fill this in from todoist.Authorize().
 	todoapi := todoist.NewSyncV7API(uc.TodoistOAuth2Token())
 
 	start, err := trip.Start()
 	if err != nil {
-		fmt.Printf("Unable to get start date from trip: %v\n", err)
+		log.Printf("Unable to get start date from trip: %v\n", err)
 		return
 	}
 
 	name := fmt.Sprintf("Trip: %s", trip.DisplayName)
+	log.Printf("Processing %s", name)
+
 	p := tasks.Project{
 		Name:  name,
-		Tasks: tasks.Expand(cl, start)}
+		Tasks: tasks.Expand(cl, start, taskCutoff)}
+
+	if p.Empty() {
+		log.Println("No tasks within cutoff window, skipping.")
+		return
+	}
 
 	rp, found, err := todoapi.LoadProject(name)
 	if err != nil {
-		fmt.Printf("Could not load remote project: %v\n", err)
+		log.Printf("Could not load remote project: %v", err)
 	}
 	if found {
 		diffs := rp.DiffTasks(p)
-		fmt.Printf("Found, computed %d diffs\n", len(diffs))
 
 		err = todoapi.UpdateProject(rp, diffs)
 		if err != nil {
-			fmt.Printf("Unable to update project: %v\n", err)
+			log.Printf("Unable to update project: %v", err)
 		}
 	} else {
 		err = todoapi.CreateProject(p)
 		if err != nil {
-			fmt.Printf("Unable to create project: %v\n", err)
+			log.Printf("Unable to create project: %v", err)
 		}
 	}
 }
