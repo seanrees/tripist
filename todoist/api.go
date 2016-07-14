@@ -202,8 +202,7 @@ func (s *SyncV7API) createItem(projId string, t tasks.Task) WriteItem {
 	return WriteItem{
 		Type:   PTR(ItemAdd),
 		TempId: PTR(uuid.NewV4().String()),
-		//UUID:   PTR(uuid.NewV4().String()),
-		UUID: PTR("12345"),
+		UUID:   PTR(uuid.NewV4().String()),
 		Args: Item{
 			Content:    &t.Content,
 			Indent:     &t.Indent,
