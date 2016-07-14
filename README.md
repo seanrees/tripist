@@ -14,14 +14,14 @@ your Tripit data and generate Todoist projects. To do this:
 
 % ./tripist -authorize_tripit
 1. Login to TripIt in your browser.
-2. After login, browse to: <URL>
-3. Grant access & copy the verification code.
+2. After login, browse to: https://www.tripit.com/oauth/authorize?oauth_callback=https%3A%2F%2Ffreyr.erifax.org%2Ftripist%2F&oauth_token=605dc50e77b8e232badffd42a353df15f6e9a598
+3. Grant access and copy the 'oauth_token' parameter displayed.
 
-Enter verification code: <CODE>
+Enter oauth_token: <CODE>
 
 % ./tripist -authorize_todoist
-1. Browse to: <URL>
-2. Copy the code= parameter from your URL bar.
+1. Browse to: https://todoist.com/oauth/authorize?access_type=offline&client_id=db0d3f274c864a9f8a429283514b92d1&redirect_uri=https%3A%2F%2Ffreyr.erifax.org%2Ftripist%2F&response_type=code&scope=data%3Aread_write%2Cdata%3Adelete%2Cproject%3Adelete&state=erifax
+2. Grant access and copy the 'code' parameter displayed.
 
 Enter verification code: <CODE>
 ```

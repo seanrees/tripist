@@ -31,7 +31,7 @@ func Authorize() *oauth.AccessToken {
 
 	fmt.Println("1. Login to TripIt in your browser.")
 	fmt.Println("2. After login, browse to: " + url)
-	fmt.Println("2. Grant access and copy the 'oauth_token' parameter displayed.")
+	fmt.Println("3. Grant access and copy the 'oauth_token' parameter displayed.")
 	fmt.Print("\nEnter oauth_token: ")
 	verifyCode := ""
 	fmt.Scanln(&verifyCode)
