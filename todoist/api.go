@@ -86,44 +86,72 @@ func (s *SyncV7API) Write(c Commands) (WriteResponse, error) {
 		return resp, err
 	}
 
-	log.Printf("Response from Todoist: %v", resp)
-
-	uuidToCmd := make(map[string]*WriteItem)
-	errors := 0
-	for _, cmd := range c {
-		uuidToCmd[*cmd.UUID] = &cmd
-	}
-
-	for uuid, state := range resp.SyncStatus {
-		code, ok := state.(string)
-		if ok {
-			if code != "ok" {
-				log.Printf("Unexpected error %q from Todoist for command UUID %s", state, uuid)
-				errors++
-			}
-			continue
+	if errs := s.checkErrors(&c, &resp); len(errs) > 0 {
+		for _, e := range errs {
+			log.Printf("Write error from Todoist: %s", e.Message)
 		}
-
-		e, ok := state.(map[string]interface{})
-		if ok {
-			cmd, ok := uuidToCmd[uuid]
-			if ok {
-				log.Printf("Error syncing %s (UUID %s): %v (%v)", *cmd.Type, uuid, e["error"], cmd.Args)
-			} else {
-				log.Printf("Error for unsent UUID %s: %v", uuid, e)
-			}
-			errors++
-			continue
-		}
-
-		log.Printf("Unknown response type from Todoist: %T", state)
-	}
-
-	if errors > 0 {
-		return resp, fmt.Errorf("%d sync errors writing to Todoist", errors)
+		return resp, fmt.Errorf("write failed for %d/%d commands, call checkErrors", len(errs), len(c))
 	}
 
 	return resp, nil
+}
+
+func (s *SyncV7API) checkErrors(cmds *Commands, r *WriteResponse) []writeError {
+	var ret []writeError
+	uuidTbl := make(map[string]*WriteItem)
+	for _, c := range *cmds {
+		uuidTbl[*c.UUID] = &c
+	}
+
+	for uuid, i := range r.SyncStatus {
+		msg := ""
+		handled := false
+
+		// If it's a string, it should be just "ok" -- if not, that's an
+		// unexpected state from Todoist.
+		if state, ok := i.(string); ok {
+			if state != "ok" {
+				msg = fmt.Sprintf("unexpected error code %q (should be map or 'ok')", state)
+			}
+			handled = true
+		}
+
+		// If it's an error, it should be a map with numerous properties (like:
+		// "error", "error_code", etc.
+		if m, ok := i.(map[string]interface{}); ok {
+			code, cok := m["error_code"]
+			if !cok {
+				code = "(no error_code)"
+			}
+			err, eok := m["error"]
+			if !eok {
+				err = "(no error message)"
+			}
+			cmd, cmdok := m["command_type"]
+			if !cmdok {
+				cmd = "(no command_type)"
+			}
+			msg = fmt.Sprintf("sync %q error code %v: %v", cmd, code, err)
+			handled = true
+		}
+
+		if !handled {
+			// If we got here, then we got an unknown response from Todoist. Sigh.
+			msg = fmt.Sprintf("unknown response type %T from Todoist, data: %v", i, i)
+		}
+
+		c, ok := uuidTbl[uuid]
+		if !ok {
+			msg += fmt.Sprintf(", error for a different UUID than asked")
+		}
+
+		if len(msg) > 0 {
+			msg += fmt.Sprintf(" (uuid %s)", uuid)
+			ret = append(ret, writeError{Message: msg, Item: c})
+		}
+	}
+
+	return ret
 }
 
 func (s *SyncV7API) listItems(p *Project) ([]Item, error) {
@@ -174,7 +202,8 @@ func (s *SyncV7API) createItem(projId string, t tasks.Task) WriteItem {
 	return WriteItem{
 		Type:   PTR(ItemAdd),
 		TempId: PTR(uuid.NewV4().String()),
-		UUID:   PTR(uuid.NewV4().String()),
+		//UUID:   PTR(uuid.NewV4().String()),
+		UUID: PTR("12345"),
 		Args: Item{
 			Content:    &t.Content,
 			Indent:     &t.Indent,
@@ -263,7 +292,6 @@ func (s *SyncV7API) UpdateProject(p tasks.Project, diffs []tasks.Diff) error {
 					i.DueDateUTC = PTR(d.Task.DueDate.Format(DueDateFormatForWrite))
 					i.Indent = &d.Task.Indent
 					cmds = append(cmds, s.updateItem(i))
-					log.Printf("New due date = %s", *i.DueDateUTC)
 					break
 				}
 			}

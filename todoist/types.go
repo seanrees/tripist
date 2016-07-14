@@ -169,3 +169,8 @@ type projectItems struct {
 	ProjectId int
 	Items     []Item
 }
+
+type writeError struct {
+	Message string
+	Item    *WriteItem
+}
