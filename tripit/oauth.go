@@ -16,7 +16,7 @@ func buildConsumer() *oauth.Consumer {
 		})
 
 	// Required by TripIt.
-	c.AdditionalAuthorizationUrlParams["oauth_callback"] = "out-of-band"
+	c.AdditionalAuthorizationUrlParams["oauth_callback"] = "https://freyr.erifax.org/tripist/"
 	return c
 }
 
@@ -31,8 +31,8 @@ func Authorize() *oauth.AccessToken {
 
 	fmt.Println("1. Login to TripIt in your browser.")
 	fmt.Println("2. After login, browse to: " + url)
-	fmt.Println("3. Grant access & copy the verification code.")
-	fmt.Print("\nEnter verification code: ")
+	fmt.Println("2. Grant access and copy the 'oauth_token' parameter displayed.")
+	fmt.Print("\nEnter oauth_token: ")
 	verifyCode := ""
 	fmt.Scanln(&verifyCode)
 

@@ -1,0 +1,68 @@
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+  <title>Tripist Parameters Page</title>
+  <style>
+table {
+  font-size: 18pt;
+  font-family: monospace;
+  padding: 10px;
+}
+
+th {
+  text-align: right;
+  background: #deeff5;
+}
+  </style>
+  <script>
+function printParameters() {
+    var params = getParams()
+
+    table = document.createElement("table")
+    for (var key in params) {
+        row = document.createElement("tr")
+        header = document.createElement("th")
+        data = document.createElement("td")
+
+        header.innerHTML = key
+        data.innerHTML = params[key]
+
+        row.appendChild(header)
+        row.appendChild(data)
+        table.appendChild(row)
+    }
+
+    document.body.appendChild(table)
+}
+
+function getParams() {
+    var params = window.location.search
+    var last = 1
+    var done = false
+    var ret = {}
+
+    while (!done) {
+        next = params.indexOf('&', last)
+        done = false
+        if (next == -1) {
+            done = true
+            next = params.length
+        }
+        var p = params.substring(last, next)
+        var parts = p.split('=')
+        ret[decodeURIComponent(parts[0])] = decodeURIComponent(parts[1])
+        last = next+1
+    }
+
+    return ret 
+}
+
+  </script>
+</head>
+<body onload="printParameters()">
+<h1>Tripist Parameter Page</h1>
+<p>
+You're here to copy tokens for your Tripist configuration. Copy the
+relevant token from the table below.
+</p>
+</body>
+</html>

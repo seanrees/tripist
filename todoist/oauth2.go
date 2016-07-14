@@ -15,9 +15,7 @@ func buildConfig() *oauth2.Config {
 		ClientID:     oauth2ClientID,
 		ClientSecret: oauth2ClientSecret,
 		Scopes:       []string{"data:read_write,data:delete,project:delete"},
-		// TODO(seanrees): point this at something other than google.com since it
-		// will eat the code= param if redirected to the country-specific site.
-		RedirectURL: "http://www.google.com",
+		RedirectURL: "https://freyr.erifax.org/tripist/",
 		Endpoint: oauth2.Endpoint{
 			AuthURL:  "https://todoist.com/oauth/authorize",
 			TokenURL: "https://todoist.com/oauth/access_token",
@@ -28,12 +26,12 @@ func buildConfig() *oauth2.Config {
 func Authorize() *oauth2.Token {
 	conf := buildConfig()
 
-	// state=txs -- totally a random string.
-	url := conf.AuthCodeURL("txs", oauth2.AccessTypeOffline)
+	// state=erifax -- totally a random string.
+	url := conf.AuthCodeURL("erifax", oauth2.AccessTypeOffline)
 
 	fmt.Println("1. Browse to: " + url)
-	fmt.Println("2. Copy the code= parameter from your URL bar.")
-	fmt.Print("\nEnter verification code: ")
+	fmt.Println("2. Grant access and copy the 'code' parameter displayed.")
+	fmt.Print("\nEnter code: ")
 	code := ""
 	fmt.Scanln(&code)
 
