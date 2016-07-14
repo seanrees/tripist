@@ -1,8 +1,32 @@
 # Tripist
 
-This is a simple proof-of-concept to create Todoist projects (e.g; to
-pack) from TripIt trips. The PoC will only scan for trips upto 45 days
-away.
+This tool creates Todoist projects for upcoming trips in Tripit. It scans your
+upcoming trips, evaluates your travel checklist, and creates the project and
+tasks as appropriate.
+
+The current default is to create new tasks when they are 1 week away. This can be
+overriden with -task_cutoff_days.
+
+This program reads a simple checklist in CSV format like this:
+```
+# Action / Text to Display, Indentation Level, Days Before Trip
+Pre-trip, 1, 0
+Charge Headphones, 2, -2
+Packing List, 1, 0
+Toiletries, 2, -1
+Passport, 2, -1
+Clothes, 2, -1
+```
+
+This will produce a Todoist project like this:
+```
+. Pre-trip
+`--- Charge Headphones (2 days before)
+. Packing List
+`--- Toiletries (1 day before)
+`--- Passport (1 day before)
+`--- Clothes (1 day before)
+```
 
 To use this, you'll need API keys. If I know you, just ask and I'll give
 you the ones I'm using.
@@ -14,14 +38,19 @@ your Tripit data and generate Todoist projects. To do this:
 
 % ./tripist -authorize_tripit
 1. Login to TripIt in your browser.
-2. After login, browse to: https://www.tripit.com/oauth/authorize?oauth_callback=https%3A%2F%2Ffreyr.erifax.org%2Ftripist%2F&oauth_token=605dc50e77b8e232badffd42a353df15f6e9a598
+2. After login, browse to: <URL>
 3. Grant access and copy the 'oauth_token' parameter displayed.
 
 Enter oauth_token: <CODE>
 
 % ./tripist -authorize_todoist
-1. Browse to: https://todoist.com/oauth/authorize?access_type=offline&client_id=db0d3f274c864a9f8a429283514b92d1&redirect_uri=https%3A%2F%2Ffreyr.erifax.org%2Ftripist%2F&response_type=code&scope=data%3Aread_write%2Cdata%3Adelete%2Cproject%3Adelete&state=erifax
+1. Browse to: <URL>
 2. Grant access and copy the 'code' parameter displayed.
 
 Enter verification code: <CODE>
+```
+
+Once configured and a checklist is in checklist.csv, just run it like so:
+```
+% tripist
 ```
