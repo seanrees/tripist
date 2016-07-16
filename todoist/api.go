@@ -198,6 +198,13 @@ func (s *SyncV7API) createProject(name, tempId string) WriteItem {
 		Args:   Project{Name: PTR(name)}}
 }
 
+func (s *SyncV7API) deleteProject(p *Project) WriteItem {
+	return WriteItem{
+		Type: PTR(ProjectDelete),
+		UUID: PTR(uuid.NewV4().String()),
+		Args: IdContainer{Ids: []int{*p.Id}}}
+}
+
 func (s *SyncV7API) createItem(projId string, t tasks.Task) WriteItem {
 	log.Printf("Creating task %q (pos=%d) due %s", t.Content, t.Position, t.DueDate.Format(DueDateFormatForWrite))
 
@@ -235,6 +242,13 @@ func (s *SyncV7API) updateItem(i Item, t tasks.Task) WriteItem {
 		TempId: PTR(uuid.NewV4().String()),
 		UUID:   PTR(uuid.NewV4().String()),
 		Args:   i}
+}
+
+func (s *SyncV7API) deleteItem(i Item) WriteItem {
+	return WriteItem{
+		Type: PTR(ItemDelete),
+		UUID: PTR(uuid.NewV4().String()),
+		Args: IdContainer{Ids: []int{*i.Id}}}
 }
 
 // Returns a tasks.Project, whether or not it was found, and any error.

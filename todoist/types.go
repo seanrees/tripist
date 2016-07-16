@@ -14,10 +14,11 @@ const (
 	Projects = "projects"
 
 	// Types that can be written.
-	ItemAdd    = "item_add"
-	ItemDelete = "item_delete"
-	ItemUpdate = "item_update"
-	ProjectAdd = "project_add"
+	ItemAdd       = "item_add"
+	ItemDelete    = "item_delete"
+	ItemUpdate    = "item_update"
+	ProjectAdd    = "project_add"
+	ProjectDelete = "project_delete"
 
 	DateFormat = "01/02/2006"
 
@@ -89,7 +90,7 @@ func (i WriteItem) String() string {
 	return stringify(i)
 }
 
-type DeleteItems struct {
+type IdContainer struct {
 	Ids []int `json:"ids"`
 }
 

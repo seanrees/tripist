@@ -21,6 +21,7 @@ var (
 	authorizeTodoist = flag.Bool("authorize_todoist", false, "Perform Todoist Authorization. This is an exclusive flag.")
 	taskCutoffDays   = flag.Int("task_cutoff_days", 7, "Create tasks upto this many days in advance of their due date.")
 	checklistCSV     = flag.String("checklist_csv", "checklist.csv", "Travel checklist CSV file.")
+	verifyTodoist    = flag.Bool("verify_todoist", false, "Perform Todoist API validation. This is an exclusive flag.")
 )
 
 type userConfig struct {
@@ -87,6 +88,16 @@ func main() {
 		t := todoist.Authorize()
 		conf.TodoistToken = t.AccessToken
 		writeConfig(conf, configFilename)
+		return
+	}
+
+	if *verifyTodoist {
+		api := todoist.NewSyncV7API(conf.TodoistOAuth2Token())
+		if err := todoist.Verify(api); err != nil {
+			log.Printf("Todoist validation failed: %v", err)
+		} else {
+			log.Printf("Todoist validation success.")
+		}
 		return
 	}
 
