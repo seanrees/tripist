@@ -147,7 +147,7 @@ func verifyTasksInProject(name string, step *int, expected []tasks.Task, api *Sy
 		return nil, err
 	}
 	if !found {
-		return nil, fmt.Errorf("unable to find project %q with LoadProject")
+		return nil, fmt.Errorf("unable to find project %q with LoadProject", name)
 	}
 	if d := tp.DiffTasks(tasks.Project{Tasks: expected}); len(d) > 0 {
 		return nil, fmt.Errorf("unexpected diffs in write / read cycle: %v", d)
