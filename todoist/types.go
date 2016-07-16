@@ -173,5 +173,5 @@ type projectItems struct {
 
 type writeError struct {
 	Message string
-	Item    *WriteItem
+	Item    WriteItem
 }

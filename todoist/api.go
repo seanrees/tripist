@@ -100,9 +100,9 @@ func (s *SyncV7API) Write(c Commands) (WriteResponse, error) {
 
 func (s *SyncV7API) checkErrors(cmds *Commands, r *WriteResponse) []writeError {
 	var ret []writeError
-	uuidTbl := make(map[string]*WriteItem)
+	uuidTbl := make(map[string]WriteItem)
 	for _, c := range *cmds {
-		uuidTbl[*c.UUID] = &c
+		uuidTbl[*c.UUID] = c
 	}
 
 	for uuid, i := range r.SyncStatus {
