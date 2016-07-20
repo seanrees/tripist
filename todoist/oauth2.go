@@ -9,7 +9,7 @@ import (
 func buildConfig() *oauth2.Config {
 	// todoist.com requires ClientID and ClientSecret to be set as parameters
 	// in the POST.
-	oauth2.RegisterBrokenAuthHeaderProvider("https://todoist.com")
+	//oauth2.RegisterBrokenAuthHeaderProvider("https://todoist.com")
 
 	return &oauth2.Config{
 		ClientID:     Oauth2ClientID,
