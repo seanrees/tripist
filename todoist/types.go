@@ -133,6 +133,10 @@ type Item struct {
 	DateAdded      *string     `json:"date_added"`
 }
 
+func (i Item) Valid() bool {
+	return i.Content != nil && i.Id != nil
+}
+
 func (i Item) String() string {
 	return stringify(i)
 }

@@ -271,9 +271,19 @@ func (s *SyncV7API) LoadProject(name string) (tasks.Project, bool, error) {
 	}
 
 	for _, i := range li {
-		due, err := time.ParseInLocation(DueDateFormatForRead, *i.DueDateUTC, time.UTC)
-		if err != nil {
-			log.Printf("Could not parse %q: %v (ignoring, may generate diffs)", *i.DueDateUTC, err)
+		if !i.Valid() {
+			log.Printf("Ignoring invalid item: %s", i)
+			continue
+		}
+
+		var due time.Time
+		if i.DueDateUTC == nil {
+			log.Printf("No due date for %q, using empty value", *i.Content)
+		} else {
+			due, err = time.ParseInLocation(DueDateFormatForRead, *i.DueDateUTC, time.UTC)
+			if err != nil {
+				log.Printf("Could not parse %q: %v (ignoring, may generate diffs)", *i.DueDateUTC, err)
+			}
 		}
 
 		ret.Tasks = append(ret.Tasks, tasks.Task{
