@@ -16,28 +16,24 @@ func TestLoad(t *testing.T) {
 		want: []ChecklistItem{},
 		err:  false,
 	}, {
-		csv:  "foo,1,1",
-		want: []ChecklistItem{{"foo", 1, 1}},
+		csv:  "foo,1,1 day before start",
+		want: []ChecklistItem{{"foo", 1, "1 day before start"}},
 		err:  false,
 	}, {
-		csv:  "foo,1,1\nbar,1,2",
-		want: []ChecklistItem{{"foo", 1, 1}, {"bar", 1, 2}},
+		csv:  "foo,1,bizzle\nbar,1,wizzle",
+		want: []ChecklistItem{{"foo", 1, "bizzle"}, {"bar", 1, "wizzle"}},
 		err:  false,
 	}, {
-		csv:  "foo,1,not-a-num",
+		csv:  "foo\nbar,1,error",
 		want: []ChecklistItem{},
 		err:  true,
 	}, {
-		csv:  "foo\nbar,1,1",
-		want: []ChecklistItem{},
+		csv:  "foo,1,e\nnot-enough-fields\nbar,3,f",
+		want: []ChecklistItem{{"foo", 1, "e"}, {"bar", 3, "f"}},
 		err:  true,
 	}, {
-		csv:  "foo,1,1\nnot-enough-fields\nbar,3,2",
-		want: []ChecklistItem{{"foo", 1, 1}, {"bar", 3, 2}},
-		err:  true,
-	}, {
-		csv:  "foo,0,1\nbar,5,1\nbaz,1,1", // Indent out of range.
-		want: []ChecklistItem{{"baz", 1, 1}},
+		csv:  "foo,0,oof\nbar,5,rab\nbaz,1,zab", // Indent out of range.
+		want: []ChecklistItem{{"baz", 1, "zab"}},
 		err:  true,
 	}}
 

@@ -7,7 +7,6 @@ import (
 	"os"
 	"strconv"
 	"strings"
-	"time"
 )
 
 type ChecklistItem struct {
@@ -15,16 +14,7 @@ type ChecklistItem struct {
 
 	Indent int
 
-	// This may not be expressive enough. E.g; some tasks might want to be quantised to units
-	// of weekends rather than days. I suspect anything sub-day is not useful.
-	Days int
-}
-
-func (t ChecklistItem) Due(due time.Time) time.Time {
-	// Add (probably subtract) the relevant t.Days from the given due time, then add back
-	// 20 hours to actually complete the task. This works best with tasks due at the *start*
-	// of some day, e.g; at 00:00.
-	return due.Add(time.Duration(t.Days) * 24 * time.Hour).Add(20 * time.Hour)
+	Due string
 }
 
 func Load(templateFilename string) ([]ChecklistItem, error) {
@@ -66,16 +56,10 @@ func load(ior io.Reader) ([]ChecklistItem, error) {
 			continue
 		}
 
-		d, err := strconv.Atoi(rec[2])
-		if err != nil {
-			errors = append(errors, fmt.Sprintf("line %d: %v", l, err))
-			continue
-		}
-
 		ret = append(ret, ChecklistItem{
 			Template: rec[0],
 			Indent:   i,
-			Days:     d,
+			Due:      rec[2],
 		})
 	}
 

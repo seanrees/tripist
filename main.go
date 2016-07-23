@@ -191,12 +191,18 @@ func createProject(uc *userConfig, trip tripit.Trip, cl []tasks.ChecklistItem, t
 		return
 	}
 
+	end, err := trip.End()
+	if err != nil {
+		log.Printf("Unable to get end date from trip: %v\n", err)
+		return
+	}
+
 	name := fmt.Sprintf("Trip: %s", trip.DisplayName)
 	log.Printf("Processing %s", name)
 
 	p := tasks.Project{
 		Name:  name,
-		Tasks: tasks.Expand(cl, start, taskCutoff)}
+		Tasks: tasks.Expand(cl, start, end, taskCutoff)}
 
 	if p.Empty() {
 		log.Println("No tasks within cutoff window, skipping.")
