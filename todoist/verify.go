@@ -69,7 +69,7 @@ func Verify(api *SyncV7API) error {
 	l(&step, "Updating an item in project %q", name)
 	testTasks[0].Position = 3
 	testTasks[0].DueDate.Add(24 * time.Hour)
-	d := tasks.Diff{tasks.Changed, testTasks[0]}
+	d := tasks.Diff{Type: tasks.Changed, Task: testTasks[0]}
 	err = api.UpdateProject(*tp, []tasks.Diff{d})
 	if err != nil {
 		return err
