@@ -202,7 +202,7 @@ func createProject(uc *userConfig, trip tripit.Trip, cl []tasks.ChecklistItem, t
 
 	p := tasks.Project{
 		Name:  name,
-		Tasks: tasks.Expand(cl, start, end, taskCutoff)}
+		Tasks: tasks.Expand(cl, start, end, time.Now(), taskCutoff)}
 
 	if p.Empty() {
 		log.Println("No tasks within cutoff window, skipping.")

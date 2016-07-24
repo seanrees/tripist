@@ -9,6 +9,7 @@ import (
 func TestExpand(t *testing.T) {
 	tripStart := time.Date(2016, 07, 15, 00, 00, 00, 00, time.UTC)
 	tripEnd := time.Date(2016, 07, 20, 12, 30, 00, 00, time.UTC)
+	now := time.Date(2016, 07, 01, 10, 00, 00, 00, time.UTC)
 	stdCutoff := time.Date(2016, 07, 10, 00, 00, 00, 00, time.UTC)
 
 	cases := []struct {
@@ -38,20 +39,23 @@ func TestExpand(t *testing.T) {
 				Indent:  1,
 				DueDate: time.Date(2016, 07, 14, 23, 00, 00, 00, time.UTC)},
 			{Content: "end",
-				Indent:  1,
-                Position: 1,
-				DueDate: time.Date(2016, 07, 18, 20, 00, 00, 00, time.UTC)},
+				Indent:   1,
+				Position: 1,
+				DueDate:  time.Date(2016, 07, 18, 20, 00, 00, 00, time.UTC)},
 			{Content: "after",
-				Indent: 1,
-                Position: 2,
-                DueDate: time.Date(2016, 07, 15, 04, 00, 00, 00, time.UTC)},
+				Indent:   1,
+				Position: 2,
+				DueDate:  time.Date(2016, 07, 15, 04, 00, 00, 00, time.UTC)},
 		},
+	}, {
+		in:   []ChecklistItem{{Template: "due date already passed", Indent: 1, Due: "15 days before start"}},
+		want: []Task{},
 	}, {
 		in: []ChecklistItem{
 			{Template: "before cutoff", Indent: 1, Due: "8 days before start"},
 			{Template: "after cutoff", Indent: 1, Due: "4 days before start"},
 		},
-        cutoff: stdCutoff,
+		cutoff: stdCutoff,
 		want: []Task{{
 			Content: "before cutoff",
 			Indent:  1,
@@ -60,7 +64,7 @@ func TestExpand(t *testing.T) {
 	}}
 
 	for _, c := range cases {
-		got := Expand(c.in, tripStart, tripEnd, c.cutoff)
+		got := Expand(c.in, tripStart, tripEnd, now, c.cutoff)
 		if !reflect.DeepEqual(got, c.want) {
 			t.Errorf("Expand(%v) == %v, want %v", c.in, got, c.want)
 		}

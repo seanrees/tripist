@@ -25,7 +25,7 @@ func abs(t time.Duration) time.Duration {
 
 // Expand expands a travel checklist into a list of Tasks. If a task has a due date
 // after cutoff, it is ignored.
-func Expand(cl []ChecklistItem, start, end, cutoff time.Time) []Task {
+func Expand(cl []ChecklistItem, start, end, now, cutoff time.Time) []Task {
 	ret := []Task{}
 
 	for pos, i := range cl {
@@ -42,6 +42,11 @@ func Expand(cl []ChecklistItem, start, end, cutoff time.Time) []Task {
 		}
 		if abs(d.duration) >= 24*time.Hour {
 			dd = time.Date(dd.Year(), dd.Month(), dd.Day(), 20, 00, 00, 00, time.UTC)
+		}
+
+		// If the due date has already passed, don't create in vain.
+		if dd.Before(now) {
+			continue
 		}
 
 		if dd.Before(cutoff) {
