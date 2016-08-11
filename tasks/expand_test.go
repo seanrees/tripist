@@ -29,26 +29,34 @@ func TestExpand(t *testing.T) {
 			DueDate: time.Date(2016, 07, 01, 20, 00, 00, 00, time.UTC),
 		}},
 	}, {
-		// Test due dates are correct.
+		// Test template expansion.
+		in:     []ChecklistItem{{Template: "trip has DAYS", Indent: 1, Due: "8 days before start"}},
+		cutoff: stdCutoff,
+		want: []Task{{
+			Content: "trip has 5 days",
+			Indent:  1,
+			DueDate: time.Date(2016, 07, 07, 20, 00, 00, 00, time.UTC),
+		}},
+	}, {
+		// Test processing happens on all items in checklist.
 		in: []ChecklistItem{
-			{Template: "no day adjustment", Indent: 1, Due: "1 hour before start"},
-			{Template: "end", Indent: 1, Due: "2 days before end"},
-			{Template: "after", Indent: 1, Due: "4 hours after start"},
+			{Template: "DAYS", Indent: 1, Due: "1 day before start"},
+			{Template: "foo bar", Indent: 1, Due: "1 day before end"},
 		},
 		cutoff: tripEnd,
 		want: []Task{
-			{Content: "no day adjustment",
-				Indent:  1,
-				DueDate: time.Date(2016, 07, 14, 23, 00, 00, 00, time.UTC)},
-			{Content: "end",
-				Indent:   1,
-				Position: 1,
-				DueDate:  time.Date(2016, 07, 18, 20, 00, 00, 00, time.UTC)},
-			{Content: "after",
-				Indent:   1,
-				Position: 2,
-				DueDate:  time.Date(2016, 07, 15, 04, 00, 00, 00, time.UTC)},
+			{Content: "5 days", Indent: 1, DueDate: time.Date(2016, 07, 14, 20, 00, 00, 00, time.UTC)},
+			{Content: "foo bar", Indent: 1, DueDate: time.Date(2016, 07, 19, 20, 00, 00, 00, time.UTC), Position: 1},
 		},
+	}, {
+		// Tasks <24h from a boundary should not be adjusted to 20:00hrs.
+		in:     []ChecklistItem{{Template: "no time adjust", Indent: 1, Due: "3 hours before start"}},
+		cutoff: tripEnd,
+		want: []Task{{
+			Content: "no time adjust",
+			Indent:  1,
+			DueDate: time.Date(2016, 07, 14, 21, 00, 00, 00, time.UTC),
+		}},
 	}, {
 		// Tasks already expired should not be expanded.
 		in:   []ChecklistItem{{Template: "due date already passed", Indent: 1, Due: "15 days before start"}},
@@ -62,15 +70,6 @@ func TestExpand(t *testing.T) {
 		cutoff: stdCutoff,
 		want: []Task{{
 			Content: "before cutoff",
-			Indent:  1,
-			DueDate: time.Date(2016, 07, 07, 20, 00, 00, 00, time.UTC),
-		}},
-	}, {
-		// Test template expansion.
-		in:     []ChecklistItem{{Template: "trip has DAYS", Indent: 1, Due: "8 days before start"}},
-		cutoff: stdCutoff,
-		want: []Task{{
-			Content: "trip has 5 days",
 			Indent:  1,
 			DueDate: time.Date(2016, 07, 07, 20, 00, 00, 00, time.UTC),
 		}},
