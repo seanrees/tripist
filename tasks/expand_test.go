@@ -20,6 +20,7 @@ func TestExpand(t *testing.T) {
 		in:   []ChecklistItem{},
 		want: []Task{},
 	}, {
+		// Test due date.
 		in:     []ChecklistItem{{Template: "foo", Indent: 1, Due: "14 days before start"}},
 		cutoff: stdCutoff,
 		want: []Task{{
@@ -28,6 +29,7 @@ func TestExpand(t *testing.T) {
 			DueDate: time.Date(2016, 07, 01, 20, 00, 00, 00, time.UTC),
 		}},
 	}, {
+		// Test due dates are correct.
 		in: []ChecklistItem{
 			{Template: "no day adjustment", Indent: 1, Due: "1 hour before start"},
 			{Template: "end", Indent: 1, Due: "2 days before end"},
@@ -48,9 +50,11 @@ func TestExpand(t *testing.T) {
 				DueDate:  time.Date(2016, 07, 15, 04, 00, 00, 00, time.UTC)},
 		},
 	}, {
+		// Tasks already expired should not be expanded.
 		in:   []ChecklistItem{{Template: "due date already passed", Indent: 1, Due: "15 days before start"}},
 		want: []Task{},
 	}, {
+		// Tasks after the cutoff should be excluded.
 		in: []ChecklistItem{
 			{Template: "before cutoff", Indent: 1, Due: "8 days before start"},
 			{Template: "after cutoff", Indent: 1, Due: "4 days before start"},
@@ -61,8 +65,16 @@ func TestExpand(t *testing.T) {
 			Indent:  1,
 			DueDate: time.Date(2016, 07, 07, 20, 00, 00, 00, time.UTC),
 		}},
+	}, {
+		// Test template expansion.
+		in:     []ChecklistItem{{Template: "trip has DAYS", Indent: 1, Due: "8 days before start"}},
+		cutoff: stdCutoff,
+		want: []Task{{
+			Content: "trip has 5 days",
+			Indent:  1,
+			DueDate: time.Date(2016, 07, 07, 20, 00, 00, 00, time.UTC),
+		}},
 	}}
-
 	for _, c := range cases {
 		got := Expand(c.in, tripStart, tripEnd, now, c.cutoff)
 		if !reflect.DeepEqual(got, c.want) {
@@ -118,4 +130,51 @@ func TestParseDue(t *testing.T) {
 		}
 	}
 
+}
+
+func TestExpandTemplate(t *testing.T) {
+	cases := []struct {
+		in    string
+		start time.Time
+		end   time.Time
+		want  string
+	}{{
+		in:   "no difference expected",
+		want: "no difference expected",
+	}, {
+		in:    "pack DAYS of clothes (1d)",
+		start: time.Date(2016, 8, 11, 12, 00, 00, 00, time.UTC), // 11/Aug @ 1200
+		end:   time.Date(2016, 8, 12, 12, 00, 00, 00, time.UTC), // 12/Aug @ 1200
+		want:  "pack 1 day of clothes (1d)",
+	}, {
+		in:    "pack DAYS of clothes (2d)",
+		start: time.Date(2016, 8, 11, 12, 00, 00, 00, time.UTC), // 11/Aug @ 1200
+		end:   time.Date(2016, 8, 13, 12, 00, 00, 00, time.UTC), // 13/Aug @ 1200
+		want:  "pack 2 days of clothes (2d)",
+	}, {
+		in:    "pack DAYS of clothes (2.25d)",
+		start: time.Date(2016, 8, 11, 12, 00, 00, 00, time.UTC), // 11/Aug @ 1200
+		end:   time.Date(2016, 8, 13, 18, 00, 00, 00, time.UTC), // 13/Aug @ 1800
+		want:  "pack 2 days of clothes (2.25d)",
+	}, {
+		in:    "pack DAYS of clothes (1.75d)",
+		start: time.Date(2016, 8, 11, 12, 00, 00, 00, time.UTC), // 11/Aug @ 1200
+		end:   time.Date(2016, 8, 13, 6, 00, 00, 00, time.UTC),  // 13/Aug @ 0800
+		want:  "pack 2 days of clothes (1.75d)",
+	}, {
+		// Same day return.
+		in:    "pack DAYS of clothes (0.25d)",
+		start: time.Date(2016, 8, 11, 12, 00, 00, 00, time.UTC), // 11/Aug @ 1200
+		end:   time.Date(2016, 8, 11, 18, 00, 00, 00, time.UTC), // 11/Aug @ 1800
+		want:  "pack 0 days of clothes (0.25d)",
+	}, {
+		in:   "",
+		want: "",
+	}}
+
+	for _, c := range cases {
+		if got := expandTemplate(c.in, c.start, c.end); got != c.want {
+			t.Errorf("expandTemplate(%q) == %q want %q", c.in, got, c.want)
+		}
+	}
 }

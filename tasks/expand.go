@@ -51,7 +51,7 @@ func Expand(cl []ChecklistItem, start, end, now, cutoff time.Time) []Task {
 
 		if dd.Before(cutoff) {
 			ret = append(ret, Task{
-				Content:  i.Template,
+				Content:  expandTemplate(i.Template, start, end),
 				Indent:   i.Indent,
 				DueDate:  dd,
 				Position: pos,
@@ -134,4 +134,38 @@ func parseDue(s string) (due, error) {
 	}
 
 	return ret, nil
+}
+
+// expandTemplate expands a template for a given trip. Right now, this just
+// expands the keyword DAYS.
+func expandTemplate(t string, start, end time.Time) string {
+	ret := t
+
+	if strings.Contains(t, "DAYS") {
+		// We need to count the calendar days (specifically, the number of nights).
+		// This may need to be timezone adjusted in future.
+		//
+		// Another approach is end.Sub(start).Hours() / 24, but this tends to produce
+		// an off-by-one error if the trip is within +/- 0.5 days of a full day.
+		days := 0
+		sy, sm, sd := start.Date()
+		for n := end; true; n = n.AddDate(0, 0, -1) {
+			ny, nm, nd := n.Date()
+			if ny == sy && nm == sm && nd == sd {
+				break
+			}
+			days++
+		}
+		var bit string
+
+		if days == 1 {
+			bit = "1 day"
+		} else {
+			bit = fmt.Sprintf("%d days", days)
+		}
+
+		ret = strings.Replace(t, "DAYS", bit, -1)
+	}
+
+	return ret
 }
