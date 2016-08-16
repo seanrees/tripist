@@ -6,7 +6,6 @@ import (
 	"github.com/mrjones/oauth"
 	"io/ioutil"
 	"net/http"
-	"sort"
 	"time"
 )
 
@@ -85,51 +84,48 @@ func (t *TripitV1API) List(p *ListParameters) ([]Trip, error) {
 	return tr.Trip, nil
 }
 
-type byTime []time.Time
-
-func (t byTime) Len() int           { return len(t) }
-func (t byTime) Swap(i, j int)      { t[i], t[j] = t[j], t[i] }
-func (t byTime) Less(i, j int) bool { return t[i].Before(t[j]) }
-
 // Corrects the Start and End of a Trip using flight data.
 func fixStartAndEndDates(tr *TripitResponse) error {
 	for i := range tr.Trip {
-		var err error
 		t := &tr.Trip[i]
 
-		// Initialise with sensible defaults.
-		t.ActualStartDate, err = t.Start()
-		if err != nil {
-			return err
-		}
-		t.ActualEndDate, err = t.End()
-		if err != nil {
-			return err
-		}
-
-		var segs []time.Time
+		var min, max time.Time
 		for _, a := range tr.AirObject {
 			if a.TripId == t.Id {
 				for _, s := range a.Segment {
-					t, err := s.StartDateTime.Parse()
-					if err != nil {
-						return err
+					for _, d := range []DateTime{s.StartDateTime, s.EndDateTime} {
+						ti, err := d.Parse()
+						if err != nil {
+							return err
+						}
+						if max.IsZero() || ti.After(max) {
+							max = ti
+						}
+						if min.IsZero() || ti.Before(min) {
+							min = ti
+						}
 					}
-					segs = append(segs, t)
-
-					t, err = s.EndDateTime.Parse()
-					if err != nil {
-						return err
-					}
-					segs = append(segs, t)
 				}
 			}
 		}
 
-		if len(segs) > 0 {
-			sort.Sort(byTime(segs))
-			t.ActualStartDate = segs[0]
-			t.ActualEndDate = segs[len(segs)-1]
+        var err error
+		if min.IsZero() {
+			t.ActualStartDate, err = t.Start()
+			if err != nil {
+				return err
+			}
+		} else {
+			t.ActualStartDate = min
+		}
+
+		if max.IsZero() {
+			t.ActualEndDate, err = t.End()
+			if err != nil {
+				return err
+			}
+		} else {
+			t.ActualEndDate = max
 		}
 	}
 
