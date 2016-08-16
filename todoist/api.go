@@ -206,7 +206,7 @@ func (s *SyncV7API) deleteProject(p *Project) WriteItem {
 }
 
 func (s *SyncV7API) createItem(projId string, t tasks.Task) WriteItem {
-	log.Printf("Creating task %q (pos=%d) due %s", t.Content, t.Position, t.DueDate.Format(DueDateFormatForWrite))
+	log.Printf("Creating task %q (pos=%d) due %s", t.Content, t.Position, t.DueDateUTC.Format(DueDateFormatForWrite))
 
 	// Todoist does not deal well with ItemOrder = 0; it won't honour order with
 	// something at zero.
@@ -220,20 +220,20 @@ func (s *SyncV7API) createItem(projId string, t tasks.Task) WriteItem {
 			Content:    &t.Content,
 			Indent:     &t.Indent,
 			ItemOrder:  &pos,
-			DateString: PTR(t.DueDate.Format(DateFormat)),
-			DueDateUTC: PTR(t.DueDate.Format(DueDateFormatForWrite)),
+			DateString: PTR(t.DueDateUTC.Format(DateFormat)),
+			DueDateUTC: PTR(t.DueDateUTC.Format(DueDateFormatForWrite)),
 			ProjectId:  &projId}}
 }
 
 func (s *SyncV7API) updateItem(i Item, t tasks.Task) WriteItem {
-	log.Printf("Updating task %q (pos=%d) due %s", t.Content, t.Position, t.DueDate.Format(DueDateFormatForWrite))
+	log.Printf("Updating task %q (pos=%d) due %s", t.Content, t.Position, t.DueDateUTC.Format(DueDateFormatForWrite))
 
 	// Todoist does not deal well with ItemOrder = 0; it won't honour order with
 	// something at zero.
 	pos := t.Position + 1
 
-	i.DateString = PTR(t.DueDate.Format(DateFormat))
-	i.DueDateUTC = PTR(t.DueDate.Format(DueDateFormatForWrite))
+	i.DateString = PTR(t.DueDateUTC.Format(DateFormat))
+	i.DueDateUTC = PTR(t.DueDateUTC.Format(DueDateFormatForWrite))
 	i.Indent = &t.Indent
 	i.ItemOrder = &pos
 
@@ -287,10 +287,10 @@ func (s *SyncV7API) LoadProject(name string) (tasks.Project, bool, error) {
 		}
 
 		ret.Tasks = append(ret.Tasks, tasks.Task{
-			Content:  *i.Content,
-			DueDate:  due,
-			Indent:   *i.Indent,
-			Position: (*i.ItemOrder) - 1})
+			Content:    *i.Content,
+			DueDateUTC: due,
+			Indent:     *i.Indent,
+			Position:   (*i.ItemOrder) - 1})
 	}
 
 	ret.External = &projectItems{ProjectId: *p.Id, Items: li}

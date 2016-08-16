@@ -24,18 +24,18 @@ func TestExpand(t *testing.T) {
 		in:     []ChecklistItem{{Template: "foo", Indent: 1, Due: "14 days before start"}},
 		cutoff: stdCutoff,
 		want: []Task{{
-			Content: "foo",
-			Indent:  1,
-			DueDate: time.Date(2016, 07, 01, 20, 00, 00, 00, time.UTC),
+			Content:    "foo",
+			Indent:     1,
+			DueDateUTC: time.Date(2016, 07, 01, 20, 00, 00, 00, time.UTC),
 		}},
 	}, {
 		// Test template expansion.
 		in:     []ChecklistItem{{Template: "trip has DAYS", Indent: 1, Due: "8 days before start"}},
 		cutoff: stdCutoff,
 		want: []Task{{
-			Content: "trip has 5 days",
-			Indent:  1,
-			DueDate: time.Date(2016, 07, 07, 20, 00, 00, 00, time.UTC),
+			Content:    "trip has 5 days",
+			Indent:     1,
+			DueDateUTC: time.Date(2016, 07, 07, 20, 00, 00, 00, time.UTC),
 		}},
 	}, {
 		// Test processing happens on all items in checklist.
@@ -45,17 +45,17 @@ func TestExpand(t *testing.T) {
 		},
 		cutoff: tripEnd,
 		want: []Task{
-			{Content: "5 days", Indent: 1, DueDate: time.Date(2016, 07, 14, 20, 00, 00, 00, time.UTC)},
-			{Content: "foo bar", Indent: 1, DueDate: time.Date(2016, 07, 19, 20, 00, 00, 00, time.UTC), Position: 1},
+			{Content: "5 days", Indent: 1, DueDateUTC: time.Date(2016, 07, 14, 20, 00, 00, 00, time.UTC)},
+			{Content: "foo bar", Indent: 1, DueDateUTC: time.Date(2016, 07, 19, 20, 00, 00, 00, time.UTC), Position: 1},
 		},
 	}, {
 		// Tasks <24h from a boundary should not be adjusted to 20:00hrs.
 		in:     []ChecklistItem{{Template: "no time adjust", Indent: 1, Due: "3 hours before start"}},
 		cutoff: tripEnd,
 		want: []Task{{
-			Content: "no time adjust",
-			Indent:  1,
-			DueDate: time.Date(2016, 07, 14, 21, 00, 00, 00, time.UTC),
+			Content:    "no time adjust",
+			Indent:     1,
+			DueDateUTC: time.Date(2016, 07, 14, 21, 00, 00, 00, time.UTC),
 		}},
 	}, {
 		// Tasks already expired should not be expanded.
@@ -69,9 +69,9 @@ func TestExpand(t *testing.T) {
 		},
 		cutoff: stdCutoff,
 		want: []Task{{
-			Content: "before cutoff",
-			Indent:  1,
-			DueDate: time.Date(2016, 07, 07, 20, 00, 00, 00, time.UTC),
+			Content:    "before cutoff",
+			Indent:     1,
+			DueDateUTC: time.Date(2016, 07, 07, 20, 00, 00, 00, time.UTC),
 		}},
 	}}
 	for _, c := range cases {

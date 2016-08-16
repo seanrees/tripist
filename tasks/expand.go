@@ -44,10 +44,9 @@ func Expand(cl []ChecklistItem, start, end, now, cutoff time.Time) []Task {
 		// If a due date is greater/equal than 1 day away from a reference point, then
 		// adjust the deadline to be near the end of that day.
 		//
-		// TODO(seanrees): this probably needs to use a local timezone. UTC works great
-		// for Dublin but elsewhere would likely cause an issue.
+		// Use the cutoff's Location() as the timezone for the task deadline.
 		if abs(d.duration) >= 24*time.Hour {
-			dd = time.Date(dd.Year(), dd.Month(), dd.Day(), 20, 00, 00, 00, time.UTC)
+			dd = time.Date(dd.Year(), dd.Month(), dd.Day(), 20, 00, 00, 00, cutoff.Location())
 		}
 
 		// If the due date has already passed, don't create in vain.
@@ -57,10 +56,10 @@ func Expand(cl []ChecklistItem, start, end, now, cutoff time.Time) []Task {
 
 		if dd.Before(cutoff) {
 			ret = append(ret, Task{
-				Content:  expandTemplate(i.Template, start, end),
-				Indent:   i.Indent,
-				DueDate:  dd,
-				Position: pos,
+				Content:    expandTemplate(i.Template, start, end),
+				Indent:     i.Indent,
+				DueDateUTC: dd.UTC(),
+				Position:   pos,
 			})
 		}
 	}

@@ -32,7 +32,7 @@ type Task struct {
 	Content string
 
 	// Due date for the task in UTC
-	DueDate time.Time
+	DueDateUTC time.Time
 
 	// Indentation level for the task
 	// TODO(srees): remove this? This is essentially nesting projects, maybe just do that?

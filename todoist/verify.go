@@ -52,8 +52,8 @@ func Verify(api *SyncV7API) error {
 	l(&step, "Adding items to project %q", name)
 	due := time.Date(2016, 07, 15, 12, 00, 00, 00, time.UTC)
 	testTasks := []tasks.Task{
-		{Content: "one", Position: 1, DueDate: due},
-		{Content: "two", Position: 2, DueDate: due},
+		{Content: "one", Position: 1, DueDateUTC: due},
+		{Content: "two", Position: 2, DueDateUTC: due},
 	}
 	cmds := Commands{}
 	id := strconv.Itoa(*p.Id)
@@ -68,7 +68,7 @@ func Verify(api *SyncV7API) error {
 
 	l(&step, "Updating an item in project %q", name)
 	testTasks[0].Position = 3
-	testTasks[0].DueDate.Add(24 * time.Hour)
+	testTasks[0].DueDateUTC.Add(24 * time.Hour)
 	d := tasks.Diff{Type: tasks.Changed, Task: testTasks[0]}
 	err = api.UpdateProject(*tp, []tasks.Diff{d})
 	if err != nil {

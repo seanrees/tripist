@@ -173,7 +173,7 @@ func writeConfig(uc *userConfig, filename string) error {
 
 func listTrips(uc *userConfig) []tripit.Trip {
 	api := tripit.NewTripitV1API(uc.TripitOAuthAccessToken())
-	trips, err := api.List(&tripit.ListParameters{Traveler: "true"})
+	trips, err := api.List(&tripit.ListParameters{Traveler: "true", IncludeObjects: true})
 	if err != nil {
 		log.Printf("Could not list trips: %v", err)
 	}
@@ -185,24 +185,12 @@ func createProject(uc *userConfig, trip tripit.Trip, cl []tasks.ChecklistItem, t
 	// Fill this in from todoist.Authorize().
 	todoapi := todoist.NewSyncV7API(uc.TodoistOAuth2Token())
 
-	start, err := trip.Start()
-	if err != nil {
-		log.Printf("Unable to get start date from trip: %v\n", err)
-		return
-	}
-
-	end, err := trip.End()
-	if err != nil {
-		log.Printf("Unable to get end date from trip: %v\n", err)
-		return
-	}
-
 	name := fmt.Sprintf("Trip: %s", trip.DisplayName)
 	log.Printf("Processing %s", name)
 
 	p := tasks.Project{
 		Name:  name,
-		Tasks: tasks.Expand(cl, start, end, time.Now(), taskCutoff)}
+		Tasks: tasks.Expand(cl, trip.ActualStartDate, trip.ActualEndDate, time.Now(), taskCutoff)}
 
 	if p.Empty() {
 		log.Println("No tasks within cutoff window, skipping.")
