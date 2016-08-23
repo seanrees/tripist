@@ -5,9 +5,19 @@ import "time"
 type TripitResponse struct {
 	Timestamp int64 `json:"timestamp,string"`
 	NumBytes  int64 `json:"num_bytes,string"`
-	Trip      []Trip
+
+	// If you have 1 Trip, the TripIt API does returns a single result and
+	// not a list.
+	Trip []Trip
+
 	AirObject []AirObject
 	// Other data includes: LodgingObject, WeatherObject, and Profile.
+}
+
+// Tripit returns a single Trip object if you only have one Trip upcoming.
+// This is unlike the standard TripitResponse which returns a list of Trip objects.
+type TripitSingleTripResponse struct {
+	Trip Trip
 }
 
 type Trip struct {
@@ -21,12 +31,11 @@ type Trip struct {
 	IsTraveler             bool   `json:"is_traveler,string"`
 	PrimaryLocation        string `json:"primary_location_address"`
 	PrimaryLocationAddress Address
-	TripInvitees           []Invitee
 	TripPurposes           TripPurpose
 
 	// Set by fixStartAndEndDates.
-	ActualStartDate time.Time
-	ActualEndDate   time.Time
+	ActualStartDate time.Time `json:"-"`
+	ActualEndDate   time.Time `json:"-"`
 }
 
 func (t *Trip) Start() (time.Time, error) {
@@ -43,12 +52,6 @@ type Address struct {
 	Country   string
 	Latitude  float32 `json:",string"`
 	Longitude float32 `json:",string"`
-}
-
-type Invitee struct {
-	IsOwner    bool `json:"is_owner,string"`
-	IsReadOnly bool `json:"is_read_only,string"`
-	IsTraveler bool `json:"is_traveler,string"`
 }
 
 type TripPurpose struct {

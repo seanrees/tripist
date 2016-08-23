@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/mrjones/oauth"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"time"
 )
@@ -30,7 +31,9 @@ func (t *TripitV1API) makeClient() (*http.Client, error) {
 	return c, nil
 }
 
-func (t *TripitV1API) makeRequest(url string, obj interface{}) error {
+type callbackFn func([]byte) error
+
+func (t *TripitV1API) makeRequest(url string, cb callbackFn) error {
 	c, err := t.makeClient()
 	if err != nil {
 		return err
@@ -47,8 +50,7 @@ func (t *TripitV1API) makeRequest(url string, obj interface{}) error {
 		return err
 	}
 
-	json.Unmarshal(data, obj)
-	return nil
+	return cb(data)
 }
 
 type ListParameters struct {
@@ -71,7 +73,30 @@ func (t *TripitV1API) List(p *ListParameters) ([]Trip, error) {
 	path += "/format/json"
 
 	tr := TripitResponse{}
-	err := t.makeRequest(path, &tr)
+	cb := func(data []byte) error {
+		err := json.Unmarshal(data, &tr)
+		if err != nil {
+			// Workaround some broken Tripit behaviour: if there is only one
+			// trip, we'll not be able to parse the JSON as a list-of-Trips. So
+			// we parse out just the single Trip with a special message and then
+			// copy it in.
+			if len(tr.Trip) == 0 {
+				log.Printf("No trips loaded and unmarshal error, trying single trip variant")
+				sr := TripitSingleTripResponse{}
+				if err := json.Unmarshal(data, &sr); err == nil {
+					log.Printf("Loaded trip via single-trip variant")
+					tr.Trip = append(tr.Trip, sr.Trip)
+					return nil
+				} else {
+					log.Printf("Single-trip variant failed with: %v", err)
+				}
+			}
+			return err
+		}
+		return nil
+	}
+
+	err := t.makeRequest(path, cb)
 	if err != nil {
 		return nil, err
 	}
@@ -109,7 +134,7 @@ func fixStartAndEndDates(tr *TripitResponse) error {
 			}
 		}
 
-        var err error
+		var err error
 		if min.IsZero() {
 			t.ActualStartDate, err = t.Start()
 			if err != nil {
