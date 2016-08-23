@@ -65,6 +65,9 @@ func Verify(api *SyncV7API) error {
 	}
 
 	tp, err = verifyTasksInProject(name, &step, testTasks, api)
+	if tp == nil {
+		return fmt.Errorf("Unable to load tasks in %q, got back nil", name)
+	}
 
 	l(&step, "Updating an item in project %q", name)
 	testTasks[0].Position = 3
@@ -121,12 +124,7 @@ func randomProjectName() string {
 }
 
 func verifyProjectPresence(name string, step *int, expected bool, api *SyncV7API) (*Project, error) {
-	str := ""
-	if !expected {
-		str = "not "
-	}
-
-	l(step, "Verifying %q %spresent", name, str)
+	l(step, "Checking %q presence", name)
 
 	p, err := api.findProject(name)
 	if err != nil {
@@ -134,7 +132,11 @@ func verifyProjectPresence(name string, step *int, expected bool, api *SyncV7API
 	}
 	found := p != nil
 	if found != expected {
-		return nil, fmt.Errorf("found %q which should %sexist", name, str)
+		if found {
+			return nil, fmt.Errorf("%q found which should NOT exist", name)
+		} else {
+			return nil, fmt.Errorf("%q NOT found which should exist", name)
+		}
 	}
 
 	return p, nil

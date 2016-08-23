@@ -40,6 +40,9 @@ type Task struct {
 
 	// Position of the task
 	Position int
+
+	// Whether or not the task is completed
+	Completed bool
 }
 
 type Diff struct {

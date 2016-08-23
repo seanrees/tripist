@@ -109,6 +109,7 @@ func main() {
 	log.Printf("Loaded %s with %d tasks\n", *checklistCSV, len(checklist))
 
 	trips := listTrips(conf)
+
 	window := time.Now().AddDate(0, 0, *taskCutoffDays)
 
 	log.Printf("Creating tasks up to cutoff %s", window)

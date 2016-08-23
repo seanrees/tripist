@@ -50,14 +50,11 @@ func (s *SyncV7API) makeRequest(path string, data url.Values, obj interface{}) e
 
 // Reads specific types and returns a ReadResponse. Possible types are in constants:
 // Projects, Items.
-//
-// sequenceNumber should be zero or a ReadResponse.SequenceNumber if you desire an
-// incremental read.
-func (s *SyncV7API) Read(types []string, sequenceNumber int) (ReadResponse, error) {
+func (s *SyncV7API) Read(types []string) (ReadResponse, error) {
 	resp := ReadResponse{}
 	params := url.Values{}
 	params.Add("token", s.token.AccessToken)
-	params.Add("seq_no", fmt.Sprintf("%d", sequenceNumber))
+	params.Add("sync_token", "*")
 
 	t, err := json.Marshal(types)
 	if err != nil {
@@ -157,7 +154,8 @@ func (s *SyncV7API) checkErrors(cmds *Commands, r *WriteResponse) []writeError {
 }
 
 func (s *SyncV7API) listItems(p *Project) ([]Item, error) {
-	resp, err := s.Read([]string{Items}, 0)
+	resp, err := s.Read([]string{Items})
+
 	if err != nil {
 		log.Printf("Could not read Todoist items: %v", err)
 		return nil, err
@@ -176,7 +174,7 @@ func (s *SyncV7API) listItems(p *Project) ([]Item, error) {
 }
 
 func (s *SyncV7API) findProject(name string) (*Project, error) {
-	resp, err := s.Read([]string{Projects}, 0)
+	resp, err := s.Read([]string{Projects})
 	if err != nil {
 		log.Printf("Could not read Todoist projects: %v", err)
 		return nil, err
@@ -290,6 +288,7 @@ func (s *SyncV7API) LoadProject(name string) (tasks.Project, bool, error) {
 			Content:    *i.Content,
 			DueDateUTC: due,
 			Indent:     *i.Indent,
+			Completed:  *i.IsArchived == 1,
 			Position:   (*i.ItemOrder) - 1})
 	}
 
