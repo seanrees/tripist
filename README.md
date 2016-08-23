@@ -1,35 +1,81 @@
 # Tripist
 
-This tool creates Todoist projects for upcoming trips in Tripit. It scans your
-upcoming trips, evaluates your travel checklist, and creates the project and
-tasks as appropriate.
+This tool creates Todoist projects for upcoming trips in Tripit. It uses a configurable checklist (described below) to create tasks for each upcoming trip.
 
-The current default is to create new tasks when they are 1 week away. This can be
-overriden with -task_cutoff_days.
+To be most useful, this program should be run once daily to create/update any tasks for upcoming trips. By default, the Tripist only creates tasks that are due within the next week. This is changeable with ```-task_cutoff_days```.
 
-This program reads a simple checklist in CSV format like this:
+## Usage
+
+### Flags
+```
+Usage of bin/tripist:
+  -authorize_todoist
+       	Perform Todoist Authorization. This is an exclusive flag.
+  -authorize_tripit
+       	Perform Tripit Authorization. This is an exclusive flag.
+  -checklist_csv string
+       	Travel checklist CSV file. (default "checklist.csv")
+  -task_cutoff_days int
+       	Create tasks upto this many days in advance of their due date. (default 7)
+  -verify_todoist
+       	Perform Todoist API validation. This is an exclusive flag.
+```
+
+### Checklist
+
+For each trip, Tripist expands a trip checklist into Todoist tasks. The checklist is a CSV file with the following headers:
+1. Action / Task to do (text)
+2. Indentation level (1 to 4)
+3. Due Date (humanised string, e.g; 1 day before start, 2 days after end)
+
+A sample checklist looks like this:
 ```
 # Action / Text to Display, Indentation Level, Days Before Trip
-Pre-trip, 1, 0
-Charge Headphones, 2, -2
-Packing List, 1, 0
-Toiletries, 2, -1
-Passport, 2, -1
-Clothes, 2, -1
+Pre-trip, 1, 1 hour before start
+Charge Headphones, 2, 2 days before start
+Checkin to flight, 2, 1 day before start
+Hail taxi to Airport, 2, 3 hours before start
+Packing List, 1, 1 day brefore start
+Toiletries, 2, 1 day before start
+Passport, 2, 1 day before start
+Clothes for DAYS, 2, 1 day before start
+Post-trip, 1, 1 day after end
+Order groceries, 2, 1 day before end
 ```
 
 This will produce a Todoist project like this:
 ```
 . Pre-trip
 `--- Charge Headphones (2 days before)
+`--- Checkin to flight (1 day before)
+`--- Hail taxi to Airport (3 hours before)
 . Packing List
 `--- Toiletries (1 day before)
 `--- Passport (1 day before)
-`--- Clothes (1 day before)
+`--- Clothes for 2 days (1 day before)
+. Post-trip
+`--- Order groceries (1 day before you return)
 ```
 
+Note, Tripist will expand the special keyword ```DAYS``` in a checklist with the number of days in the trip.
+
+### API Keys
 To use this, you'll need API keys. If I know you, just ask and I'll give
-you the ones I'm using.
+you the ones I'm using. If I don't know you, you'll need to create them with Tripit and Todoist independently. It's free and easy (at the time of this writing).
+
+#### API Key Location
+Store the API keys in ```tripist.json``` in Tripist's runtime working directory.
+
+This looks like:
+```
+% cat tripist.json
+{
+    "TripitAPIKey": "",
+    "TripitAPISecret": "",
+    "TodoistClientID": "",
+    "TodoistClientSecret": ""
+}
+```
 
 Once you have the API keys, you need to authorize the application to read
 your Tripit data and generate Todoist projects. To do this:
@@ -52,5 +98,6 @@ Enter verification code: <CODE>
 
 Once configured and a checklist is in checklist.csv, just run it like so:
 ```
-% tripist
+% go install github.com/seanrees/tripist
+% bin/tripist
 ```
