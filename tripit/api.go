@@ -117,7 +117,7 @@ func fixStartAndEndDates(tr *TripitResponse) error {
 		var min, max time.Time
 		for _, a := range tr.AirObject {
 			if a.TripId == t.Id {
-				for _, s := range a.Segment {
+				for _, s := range a.Segments() {
 					for _, d := range []DateTime{s.StartDateTime, s.EndDateTime} {
 						ti, err := d.Parse()
 						if err != nil {

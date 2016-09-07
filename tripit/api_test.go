@@ -5,8 +5,12 @@ import (
 	"time"
 )
 
-func makeDateTime(d, t, tz, utc string) DateTime {
-	return DateTime{Date: d, Time: t, Timezone: tz, UtcOffset: utc}
+func makeSegment(sd, ed map[string]interface{}) map[string]interface{} {
+	return map[string]interface{}{"StartDateTime": sd, "EndDateTime": ed}
+}
+
+func makeDateTime(d, t, tz, utc string) map[string]interface{} {
+	return map[string]interface{}{"date": d, "time": t, "timezone": tz, "utc_offset": utc}
 }
 
 func TestFixStartAndEndDates(t *testing.T) {
@@ -19,31 +23,26 @@ func TestFixStartAndEndDates(t *testing.T) {
 	airObjects := []AirObject{{
 		Id:     "A0",
 		TripId: "T0",
-		Segment: []Segment{{
-			Id:            "A0S0",
-			StartDateTime: makeDateTime("2016-08-16", "10:00:00", "Europe/Dublin", "+01:00"),
-			EndDateTime:   makeDateTime("2016-08-16", "12:30:00", "Europe/Dublin", "+01:00"),
-		}, {
-			Id:            "A0S1",
-			StartDateTime: makeDateTime("2016-08-16", "15:00:00", "Europe/Dublin", "+01:00"),
-			EndDateTime:   makeDateTime("2016-08-16", "17:30:00", "Europe/Dublin", "+01:00"),
-		}},
+		Segment: []interface{}{
+			makeSegment(
+				makeDateTime("2016-08-16", "10:00:00", "Europe/Dublin", "+01:00"),
+				makeDateTime("2016-08-16", "12:30:00", "Europe/Dublin", "+01:00")),
+			makeSegment(
+				makeDateTime("2016-08-16", "15:00:00", "Europe/Dublin", "+01:00"),
+				makeDateTime("2016-08-16", "17:30:00", "Europe/Dublin", "+01:00")),
+		},
 	}, {
 		Id:     "A1",
 		TripId: "T0",
-		Segment: []Segment{{
-			Id:            "A1S0",
-			StartDateTime: makeDateTime("2016-08-18", "18:15:00", "Europe/Dublin", "+01:00"),
-			EndDateTime:   makeDateTime("2016-08-18", "20:30:00", "Europe/Dublin", "+01:00"),
-		}},
+		Segment: makeSegment(
+			makeDateTime("2016-08-18", "18:15:00", "Europe/Dublin", "+01:00"),
+			makeDateTime("2016-08-18", "20:30:00", "Europe/Dublin", "+01:00")),
 	}, {
 		Id:     "A2",
 		TripId: "T1",
-		Segment: []Segment{{
-			Id:            "A2S0",
-			StartDateTime: makeDateTime("2016-08-16", "06:15:00", "Europe/Dublin", "+01:00"),
-			EndDateTime:   makeDateTime("2016-08-16", "09:30:00", "Europe/Dublin", "+01:00"),
-		}},
+		Segment: makeSegment(
+			makeDateTime("2016-08-16", "06:15:00", "Europe/Dublin", "+01:00"),
+			makeDateTime("2016-08-16", "09:30:00", "Europe/Dublin", "+01:00")),
 	}}
 
 	loc, err := time.LoadLocation("Europe/Dublin")

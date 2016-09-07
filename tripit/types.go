@@ -1,6 +1,9 @@
 package tripit
 
-import "time"
+import (
+	"fmt"
+	"time"
+)
 
 type TripitResponse struct {
 	Timestamp int64 `json:"timestamp,string"`
@@ -63,26 +66,67 @@ type AirObject struct {
 	Id              string `json:"id"`
 	TripId          string `json:"trip_id"`
 	SupplierConfNum string `json:"supplier_conf_num"`
-	Segment         []Segment
+
+	// Tripit returns either a list of Segments or a single Segment inline.
+	// The JSON unmarshaler will unmarshal this into a map[key]val or a [map[key]val]].
+	Segment interface{}
+}
+
+func (ao *AirObject) Segments() []Segment {
+	var ret []Segment
+	switch ao.Segment.(type) {
+	case map[string]interface{}:
+		seg := ao.Segment.(map[string]interface{})
+		ret = append(ret, newSegment(seg))
+
+	case []interface{}:
+		segs := ao.Segment.([]interface{})
+		for _, kv := range segs {
+			switch kv.(type) {
+			case map[string]interface{}:
+				seg := kv.(map[string]interface{})
+				ret = append(ret, newSegment(seg))
+			default:
+				fmt.Printf("Unknown type in manyton: %T\n", kv)
+			}
+		}
+
+	default:
+		fmt.Printf("Unknown type for Segment: %T\n", ao.Segment)
+		return nil
+	}
+
+	return ret
 }
 
 type Segment struct {
-	Id               string `json:"id"`
-	StartAirportCode string `json:"start_airport_code"`
-	StartCityName    string `json:"start_city_name"`
-	StartTerminal    string `json:"start_terminal"`
-	EndAirportCode   string `json:"end_airport_code"`
-	EndCityName      string `json:"end_city_name"`
-	EndTerminal      string `json:"end_terminal"`
-	StartDateTime    DateTime
-	EndDateTime      DateTime
+	StartDateTime DateTime
+	EndDateTime   DateTime
+}
+
+func newSegment(kv map[string]interface{}) Segment {
+	sd := kv["StartDateTime"].(map[string]interface{})
+	ed := kv["EndDateTime"].(map[string]interface{})
+	return Segment{
+		StartDateTime: newDateTime(sd),
+		EndDateTime:   newDateTime(ed),
+	}
 }
 
 type DateTime struct {
-	Date      string `json:"date"`
-	Time      string `json:"time"`
-	Timezone  string `json:"timezone"`
+	Date      string
+	Time      string
+	Timezone  string
 	UtcOffset string `json:"utc_offset"`
+}
+
+func newDateTime(kv map[string]interface{}) DateTime {
+	return DateTime{
+		Date:      fmt.Sprintf("%v", kv["date"]),
+		Time:      fmt.Sprintf("%v", kv["time"]),
+		Timezone:  fmt.Sprintf("%v", kv["timezone"]),
+		UtcOffset: fmt.Sprintf("%v", kv["utc_offset"]),
+	}
 }
 
 func (dt *DateTime) Parse() (time.Time, error) {
