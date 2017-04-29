@@ -91,6 +91,19 @@ func (t *TripitV1API) List(p *ListParameters) ([]Trip, error) {
 					log.Printf("Single-trip variant failed with: %v", err)
 				}
 			}
+			if len(tr.AirObject) == 0 {
+				log.Printf("No AirObjects loaded and unmarshal error, trying single-AO variant")
+				sr := TripitSingleAirObjectResponse{}
+				if err := json.Unmarshal(data, &sr); err == nil {
+					log.Printf("Loaded AirObject via single-AO variant")
+					tr.AirObject = append(tr.AirObject, sr.AirObject)
+				} else {
+					log.Printf("Single-AO variant failed with: %v", err)
+				}
+
+				// We might legitimately have no AirObjects, so this is non-fatal.
+				return nil
+			}
 			return err
 		}
 		return nil

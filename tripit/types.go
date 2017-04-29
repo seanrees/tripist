@@ -17,10 +17,14 @@ type TripitResponse struct {
 	// Other data includes: LodgingObject, WeatherObject, and Profile.
 }
 
-// Tripit returns a single Trip object if you only have one Trip upcoming.
-// This is unlike the standard TripitResponse which returns a list of Trip objects.
+// Tripit brokenness: it will return a single Trip object (instead of
+// list-of-Trips) if you have one trip upcoming. In some circumstances, it will
+// return a single AirObject instead of a list. Sigh.
 type TripitSingleTripResponse struct {
 	Trip Trip
+}
+type TripitSingleAirObjectResponse struct {
+	AirObject AirObject
 }
 
 type Trip struct {
