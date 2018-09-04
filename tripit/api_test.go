@@ -6,7 +6,12 @@ import (
 )
 
 func makeSegment(sd, ed map[string]interface{}) map[string]interface{} {
-	return map[string]interface{}{"StartDateTime": sd, "EndDateTime": ed}
+	return map[string]interface{}{
+		"StartDateTime":      sd,
+		"EndDateTime":        ed,
+		"start_airport_code": "FOO",
+		"end_airport_code":   "BAR",
+	}
 }
 
 func makeDateTime(d, t, tz, utc string) map[string]interface{} {

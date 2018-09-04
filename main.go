@@ -2,15 +2,14 @@
 package main
 
 import (
-	"encoding/json"
 	"flag"
 	"fmt"
 	"github.com/mrjones/oauth"
+	"github.com/seanrees/tripist/config"
 	"github.com/seanrees/tripist/tasks"
 	"github.com/seanrees/tripist/todoist"
 	"github.com/seanrees/tripist/tripit"
 	"golang.org/x/oauth2"
-	"io/ioutil"
 	"log"
 	"os"
 	"time"
@@ -24,32 +23,14 @@ var (
 	verifyTodoist    = flag.Bool("verify_todoist", false, "Perform Todoist API validation. This is an exclusive flag.")
 )
 
-type userConfig struct {
-	// tripitToken is the user's TripIt oAuth token (oauth.AccessToken.Token).
-	TripitToken string
-
-	// tripitSecret is the user's TripIt oAuth secret (oauth.AccessToken.Secret).
-	TripitSecret string
-
-	// todoistToken is the user's Todoist oauth2 AccessToken (oauth2.Token.AccessToken).
-	TodoistToken string
-}
-
-type tripistConfig struct {
-	TripitAPIKey        string
-	TripitAPISecret     string
-	TodoistClientID     string
-	TodoistClientSecret string
-}
-
-func (u *userConfig) TripitOAuthAccessToken() *oauth.AccessToken {
+func tripitOAuthAccessToken(u config.UserKeys) *oauth.AccessToken {
 	return &oauth.AccessToken{
 		Token:  u.TripitToken,
 		Secret: u.TripitSecret,
 	}
 }
 
-func (u *userConfig) TodoistOAuth2Token() *oauth2.Token {
+func todoistOAuth2Token(u config.UserKeys) *oauth2.Token {
 	return &oauth2.Token{AccessToken: u.TodoistToken}
 }
 
@@ -62,15 +43,15 @@ func main() {
 	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
 	log.SetOutput(os.Stderr)
 
-	conf := &userConfig{}
+	var conf config.UserKeys
 	if _, err := os.Stat(configFilename); err == nil {
-		conf, err = readConfig(configFilename)
+		conf, err = config.Read(configFilename)
 		if err != nil {
 			log.Fatalf("Unable to read configuration: %v\n", err)
 		}
 	}
 
-	if err := readTripistConfig(tripistConfigFilename); err != nil {
+	if err := config.LoadAPIKeys(tripistConfigFilename); err != nil {
 		log.Println("Using built-in keys.")
 	} else {
 		log.Printf("Loaded API keys from %s", tripistConfigFilename)
@@ -80,19 +61,19 @@ func main() {
 		at := tripit.Authorize()
 		conf.TripitToken = at.Token
 		conf.TripitSecret = at.Secret
-		writeConfig(conf, configFilename)
+		config.Write(conf, configFilename)
 		return
 	}
 
 	if *authorizeTodoist {
 		t := todoist.Authorize()
 		conf.TodoistToken = t.AccessToken
-		writeConfig(conf, configFilename)
+		config.Write(conf, configFilename)
 		return
 	}
 
 	if *verifyTodoist {
-		api := todoist.NewSyncV7API(conf.TodoistOAuth2Token())
+		api := todoist.NewSyncV7API(todoistOAuth2Token(conf))
 		if err := todoist.Verify(api); err != nil {
 			log.Printf("Todoist validation failed: %v", err)
 		} else {
@@ -120,60 +101,8 @@ func main() {
 
 }
 
-func readConfig(filename string) (*userConfig, error) {
-	b, err := ioutil.ReadFile(filename)
-	if err != nil {
-		return nil, err
-	}
-
-	uc := &userConfig{}
-	err = json.Unmarshal(b, &uc)
-	return uc, err
-}
-
-func readTripistConfig(filename string) error {
-	b, err := ioutil.ReadFile(filename)
-	if err != nil {
-		return err
-	}
-
-	tc := &tripistConfig{}
-	err = json.Unmarshal(b, &tc)
-	if err != nil {
-		return err
-	}
-
-	// Copy in parameters.
-	tripit.ConsumerKey = tc.TripitAPIKey
-	tripit.ConsumerSecret = tc.TripitAPISecret
-	todoist.Oauth2ClientID = tc.TodoistClientID
-	todoist.Oauth2ClientSecret = tc.TodoistClientSecret
-
-	return nil
-}
-
-func writeConfig(uc *userConfig, filename string) error {
-	b, err := json.MarshalIndent(uc, "", "\t")
-	if err != nil {
-		return err
-	}
-	f, err := os.OpenFile(filename, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0700)
-	defer f.Close()
-	if err != nil {
-		return err
-	}
-	n, err := f.Write(b)
-	if err != nil {
-		return err
-	}
-	if l := len(b); l != n {
-		return fmt.Errorf("short write to %s, wrote %d of %d bytes", filename, n, l)
-	}
-	return nil
-}
-
-func listTrips(uc *userConfig) []tripit.Trip {
-	api := tripit.NewTripitV1API(uc.TripitOAuthAccessToken())
+func listTrips(uc config.UserKeys) []tripit.Trip {
+	api := tripit.NewTripitV1API(tripitOAuthAccessToken(uc))
 	trips, err := api.List(&tripit.ListParameters{Traveler: "true", IncludeObjects: true})
 	if err != nil {
 		log.Printf("Could not list trips: %v", err)
@@ -182,9 +111,9 @@ func listTrips(uc *userConfig) []tripit.Trip {
 	return trips
 }
 
-func createProject(uc *userConfig, trip tripit.Trip, cl []tasks.ChecklistItem, taskCutoff time.Time) {
+func createProject(uc config.UserKeys, trip tripit.Trip, cl []tasks.ChecklistItem, taskCutoff time.Time) {
 	// Fill this in from todoist.Authorize().
-	todoapi := todoist.NewSyncV7API(uc.TodoistOAuth2Token())
+	todoapi := todoist.NewSyncV7API(todoistOAuth2Token(uc))
 
 	name := fmt.Sprintf("Trip: %s", trip.DisplayName)
 	log.Printf("Processing %s", name)

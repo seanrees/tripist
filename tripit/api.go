@@ -58,16 +58,22 @@ type ListParameters struct {
 	Past           bool
 	ModifiedSince  int64
 	IncludeObjects bool
+	PageNum        int64
 }
 
 // Lists trips.
-func (t *TripitV1API) List(p *ListParameters) ([]Trip, error) {
+func (t *TripitV1API) ListRaw(p *ListParameters) (*TripitResponse, error) {
 	path := ApiPath + "/list/trip"
+
+	// TripIt has 1-indexed pages. Sigh. Why?!
+	if p.PageNum < 1 {
+		p.PageNum = 1
+	}
 
 	if p != nil {
 		path += fmt.Sprintf(
-			"/traveler/%s/past/%v/modified_since/%v/include_objects/%v",
-			p.Traveler, p.Past, p.ModifiedSince, p.IncludeObjects)
+			"/traveler/%s/past/%v/modified_since/%v/include_objects/%v/page_num/%v",
+			p.Traveler, p.Past, p.ModifiedSince, p.IncludeObjects, p.PageNum)
 	}
 
 	path += "/format/json"
@@ -119,13 +125,23 @@ func (t *TripitV1API) List(p *ListParameters) ([]Trip, error) {
 		return nil, err
 	}
 
-	return tr.Trip, nil
+	return &tr, nil
+}
+
+func (t *TripitV1API) List(p *ListParameters) ([]Trip, error) {
+	if tr, err := t.ListRaw(p); err == nil {
+		return nil, err
+	} else {
+		return tr.Trip, err
+	}
 }
 
 // Corrects the Start and End of a Trip using flight data.
 func fixStartAndEndDates(tr *TripitResponse) error {
 	for i := range tr.Trip {
 		t := &tr.Trip[i]
+
+		log.Printf("trip %s\n", t.DisplayName)
 
 		var min, max time.Time
 		for _, a := range tr.AirObject {

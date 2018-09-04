@@ -8,6 +8,9 @@ import (
 type TripitResponse struct {
 	Timestamp int64 `json:"timestamp,string"`
 	NumBytes  int64 `json:"num_bytes,string"`
+	PageNum   int64 `json:"page_num,string"`
+	PageSize  int64 `json:"page_size,string"`
+	MaxPage   int64 `json:"max_page,string"`
 
 	// If you have 1 Trip, the TripIt API does returns a single result and
 	// not a list.
@@ -104,16 +107,21 @@ func (ao *AirObject) Segments() []Segment {
 }
 
 type Segment struct {
-	StartDateTime DateTime
-	EndDateTime   DateTime
+	StartDateTime    DateTime
+	EndDateTime      DateTime
+	StartAirportCode string
+	EndAirportCode   string
 }
 
 func newSegment(kv map[string]interface{}) Segment {
 	sd := kv["StartDateTime"].(map[string]interface{})
 	ed := kv["EndDateTime"].(map[string]interface{})
+
 	return Segment{
-		StartDateTime: newDateTime(sd),
-		EndDateTime:   newDateTime(ed),
+		StartDateTime:    newDateTime(sd),
+		EndDateTime:      newDateTime(ed),
+		StartAirportCode: kv["start_airport_code"].(string),
+		EndAirportCode:   kv["end_airport_code"].(string),
 	}
 }
 
