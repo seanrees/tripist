@@ -141,8 +141,6 @@ func fixStartAndEndDates(tr *TripitResponse) error {
 	for i := range tr.Trip {
 		t := &tr.Trip[i]
 
-		log.Printf("trip %s\n", t.DisplayName)
-
 		var min, max time.Time
 		for _, a := range tr.AirObject {
 			if a.TripId == t.Id {
