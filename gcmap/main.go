@@ -2,6 +2,7 @@
 package main
 
 import (
+	"flag"
 	"github.com/mrjones/oauth"
 	"github.com/seanrees/tripist/config"
 	"github.com/seanrees/tripist/tripit"
@@ -9,6 +10,11 @@ import (
 	"os"
 	"sort"
 	"strings"
+)
+
+var (
+	startYear = flag.Int("start_year", 0, "Only consider trips after (incusive) of start_year.")
+	endYear   = flag.Int("end_year", 9999, "Only consider trips before (inclusive) of end_year.")
 )
 
 type byStartDate []tripit.Segment
@@ -61,6 +67,8 @@ func main() {
 	const configFilename = "user.json"
 	const tripistConfigFilename = "tripist.json"
 
+	flag.Parse()
+
 	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
 	log.SetOutput(os.Stderr)
 
@@ -110,6 +118,11 @@ func main() {
 		}
 
 		for _, trip := range tr.Trip {
+			if sy, ey := trip.ActualStartDate.Year(), trip.ActualEndDate.Year(); sy < *startYear || ey > *endYear {
+				log.Printf("Ignoring %q because starts/ends in %d/%d, want in [%d-%d]", trip.DisplayName, sy, ey, *startYear, *endYear)
+				continue
+			}
+
 			var segs []tripit.Segment
 			for _, ao := range tr.AirObject {
 				if ao.TripId == trip.Id {
