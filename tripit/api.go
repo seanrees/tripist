@@ -129,7 +129,7 @@ func (t *TripitV1API) ListRaw(p *ListParameters) (*TripitResponse, error) {
 }
 
 func (t *TripitV1API) List(p *ListParameters) ([]Trip, error) {
-	if tr, err := t.ListRaw(p); err == nil {
+	if tr, err := t.ListRaw(p); err != nil {
 		return nil, err
 	} else {
 		return tr.Trip, err
