@@ -24,7 +24,7 @@ func init() {
 //
 // This could be rewritten with Go's testing package but would require a TestMain to setup
 // the API and user keys.
-func Verify(api *SyncV7API) error {
+func Verify(api *SyncV8API) error {
 	step := 0
 
 	var err error
@@ -52,21 +52,29 @@ func Verify(api *SyncV7API) error {
 	l(&step, "Adding items to project %q", name)
 	due := time.Date(2016, 07, 15, 12, 00, 00, 00, time.UTC)
 	testTasks := []tasks.Task{
-		{Content: "one", Position: 1, DueDateUTC: due},
-		{Content: "two", Position: 2, DueDateUTC: due},
+		{Content: "one", Indent: 1, Position: 1, DueDateUTC: due},
+		{Content: "one.one", Indent: 2, Position: 1, DueDateUTC: due},
+		{Content: "one.two", Indent: 2, Position: 2, DueDateUTC: due},
+		{Content: "two", Indent: 1, Position: 2, DueDateUTC: due},
+		{Content: "two.one", Indent: 2, Position: 1, DueDateUTC: due},
 	}
 	cmds := Commands{}
 	id := strconv.Itoa(*p.Id)
+
+	parents := make([]*string, 3)
+
 	for _, t := range testTasks {
-		cmds = append(cmds, api.createItem(id, t))
+		i := api.createItem(id, parents[t.Indent-1], t)
+		parents[t.Indent] = i.TempId
+		cmds = append(cmds, i)
 	}
 	if _, err := api.Write(cmds); err != nil {
 		return err
 	}
 
 	tp, err = verifyTasksInProject(name, &step, testTasks, api)
-	if tp == nil {
-		return fmt.Errorf("Unable to load tasks in %q, got back nil", name)
+	if err != nil {
+		return fmt.Errorf("Unable to load tasks in %q: %v", name, err)
 	}
 
 	l(&step, "Updating an item in project %q", name)
@@ -123,7 +131,7 @@ func randomProjectName() string {
 	return fmt.Sprintf("Todoist Verification %s", string(name))
 }
 
-func verifyProjectPresence(name string, step *int, expected bool, api *SyncV7API) (*Project, error) {
+func verifyProjectPresence(name string, step *int, expected bool, api *SyncV8API) (*Project, error) {
 	l(step, "Checking %q presence", name)
 
 	p, err := api.findProject(name)
@@ -142,7 +150,7 @@ func verifyProjectPresence(name string, step *int, expected bool, api *SyncV7API
 	return p, nil
 }
 
-func verifyTasksInProject(name string, step *int, expected []tasks.Task, api *SyncV7API) (*tasks.Project, error) {
+func verifyTasksInProject(name string, step *int, expected []tasks.Task, api *SyncV8API) (*tasks.Project, error) {
 	l(step, "Verifying items in project %q", name)
 	tp, found, err := api.LoadProject(name)
 	if err != nil {

@@ -65,14 +65,26 @@ func TestExpand(t *testing.T) {
 		// Tasks after the cutoff should be excluded.
 		in: []ChecklistItem{
 			{Template: "before cutoff", Indent: 1, Due: "8 days before start"},
-			{Template: "after cutoff", Indent: 1, Due: "4 days before start"},
+			{Template: "after cutoff but included because above", Indent: 1, Due: "4 days before start"},
 		},
 		cutoff: stdCutoff,
 		want: []Task{{
 			Content:    "before cutoff",
 			Indent:     1,
 			DueDateUTC: time.Date(2016, 07, 07, 20, 00, 00, 00, time.UTC),
+		}, {
+			Content:    "after cutoff but included because above",
+			Indent:     1,
+			Position:   1,
+			DueDateUTC: time.Date(2016, 07, 11, 20, 00, 00, 00, time.UTC),
 		}},
+	}, {
+		// Tasks after the cutoff should be excluded.
+		in: []ChecklistItem{
+			{Template: "after cutoff", Indent: 1, Due: "4 days before start"},
+		},
+		cutoff: stdCutoff,
+		want:   []Task{},
 	}}
 	for _, c := range cases {
 		got := Expand(c.in, tripStart, tripEnd, now, c.cutoff)

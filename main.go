@@ -73,7 +73,7 @@ func main() {
 	}
 
 	if *verifyTodoist {
-		api := todoist.NewSyncV7API(todoistOAuth2Token(conf))
+		api := todoist.NewSyncV8API(todoistOAuth2Token(conf))
 		if err := todoist.Verify(api); err != nil {
 			log.Printf("Todoist validation failed: %v", err)
 		} else {
@@ -113,7 +113,7 @@ func listTrips(uc config.UserKeys) []tripit.Trip {
 
 func createProject(uc config.UserKeys, trip tripit.Trip, cl []tasks.ChecklistItem, taskCutoff time.Time) {
 	// Fill this in from todoist.Authorize().
-	todoapi := todoist.NewSyncV7API(todoistOAuth2Token(uc))
+	todoapi := todoist.NewSyncV8API(todoistOAuth2Token(uc))
 
 	name := fmt.Sprintf("Trip: %s", trip.DisplayName)
 	log.Printf("Processing %s", name)

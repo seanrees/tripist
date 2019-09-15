@@ -27,6 +27,7 @@ func abs(t time.Duration) time.Duration {
 // after cutoff, it is ignored.
 func Expand(cl []ChecklistItem, start, end, now, cutoff time.Time) []Task {
 	ret := []Task{}
+	tasksWithinCutoff := false
 
 	for pos, i := range cl {
 		var dd time.Time
@@ -55,16 +56,22 @@ func Expand(cl []ChecklistItem, start, end, now, cutoff time.Time) []Task {
 		}
 
 		if dd.Before(cutoff) {
-			ret = append(ret, Task{
-				Content:    expandTemplate(i.Template, start, end),
-				Indent:     i.Indent,
-				DueDateUTC: dd.UTC(),
-				Position:   pos,
-			})
+			tasksWithinCutoff = true
 		}
+
+		ret = append(ret, Task{
+			Content:    expandTemplate(i.Template, start, end),
+			Indent:     i.Indent,
+			DueDateUTC: dd.UTC(),
+			Position:   pos,
+		})
 	}
 
-	return ret
+	if tasksWithinCutoff {
+		return ret
+	} else {
+		return []Task{}
+	}
 }
 
 // parseDue expands a humanized due string into a due structure. A due

@@ -6,7 +6,7 @@ import (
 )
 
 func TestCheckErrors(t *testing.T) {
-	api := NewSyncV7API(nil)
+	api := NewSyncV8API(nil)
 
 	// The actual commands don't matter, so we choose createProject as it's the
 	// simplest to create.
@@ -22,7 +22,7 @@ func TestCheckErrors(t *testing.T) {
 	errmap := make(map[string]interface{})
 	errmap["error_code"] = 150
 	errmap["error"] = "you frobbed the wrong widget"
-	errmap["command_type"] = "frob_widget"
+	errmap["error_tag"] = "FROB_WIDGET"
 
 	wr := WriteResponse{}
 	wr.SyncStatus = make(map[string]interface{})
@@ -40,7 +40,7 @@ func TestCheckErrors(t *testing.T) {
 
 	want := map[string]string{
 		"test:unexpected-state":         "unexpected error code",
-		"test:error-map":                "sync \"frob_widget\" error code 150: you frobbed the wrong widget",
+		"test:error-map":                "sync \"FROB_WIDGET\" error code 150: you frobbed the wrong widget",
 		"test:error-map-missing-fields": "(no error_code): (no error message)",
 		"test:unknown-type":             "unknown response type",
 	}

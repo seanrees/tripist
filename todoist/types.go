@@ -19,15 +19,6 @@ const (
 	ItemUpdate    = "item_update"
 	ProjectAdd    = "project_add"
 	ProjectDelete = "project_delete"
-
-	DateFormat = "01/02/2006"
-
-	// Todoist's API is pretty inconsistent. This is another one: you create
-	// tasks with DueDateUTC in DueDateFormatForWrite. These get reported back
-	// in DueDateFormatForRead, which is just like Go's time.RFC1123Z except
-	// missing a comma (wtf.)
-	DueDateFormatForRead  = "Mon 02 Jan 2006 15:04:05 -0700"
-	DueDateFormatForWrite = "2006-01-02T15:04"
 )
 
 // This is like the %+v verb in fmt, but dereferences pointers.
@@ -91,7 +82,7 @@ func (i WriteItem) String() string {
 }
 
 type IdContainer struct {
-	Ids []int `json:"ids"`
+	Id int `json:"id"`
 }
 
 type Commands []WriteItem
@@ -112,14 +103,13 @@ type Item struct {
 	Id     *int `json:"id"`
 	UserId *int `json:"user_id"`
 	// This field is normally an Integer, but in a Write, can be a *string-ified UUID.
-	ProjectId      interface{} `json:"project_id"`
-	Content        *string     `json:"content"`
-	DateString     *string     `json:"date_string"`
-	DateLang       *string     `json:"date_lang"`
-	DueDateUTC     *string     `json:"due_date_utc"`
-	Priority       *int        `json:"priority"`
-	Indent         *int        `json:"indent"`
-	ItemOrder      *int        `json:"item_order"`
+	ProjectId interface{} `json:"project_id"`
+	Content   *string     `json:"content"`
+	Due       *Due        `json:"due"`
+	Priority  *int        `json:"priority"`
+	// This field is normally an Integer, but in a Write, can be a *string-ified UUID.
+	ParentId       interface{} `json:"parent_id"`
+	ChildOrder     *int        `json:"child_order"`
 	DayOrder       *int        `json:"day_order"`
 	Collapsed      *int        `json:"collapsed"`
 	Labels         []int       `json:"labels"`
@@ -128,7 +118,6 @@ type Item struct {
 	Checked        *int        `json:"checked"`
 	InHistory      *int        `json:"in_history"`
 	IsDeleted      *int        `json:"is_deleted"`
-	IsArchived     *int        `json:"is_archived"`
 	SyncId         *int        `json:"sync_id"`
 	DateAdded      *string     `json:"date_added"`
 }
@@ -148,21 +137,35 @@ func (i Item) ProjectIdInt() int {
 	return int(v)
 }
 
+func (i Item) ParentIdInt() int {
+	v, ok := i.ParentId.(float64) // Sigh, this is what Go marshals it as.
+	if !ok {
+		return -1
+	}
+	return int(v)
+}
+
+type Due struct {
+	// RFC3339 or YYYY-MM-DDTHH:MM:SS (no trailing Z.)
+	Date        string  `json:"date"`
+	Timezone    *string `json:"timezone"`
+	IsRecurring bool    `json:"is_recurring"`
+	String      string  `json:"string"`
+	Language    string  `json:"lang"`
+}
+
 type Project struct {
-	Id                *int    `json:"id"`
-	UserId            *int    `json:"user_id"`
-	Name              *string `json:"name"`
-	Color             *int    `json:"color"`
-	Indent            *int    `json:"indent"`
-	ItemOrder         *int    `json:"item_order"`
-	Collapsed         *int    `json:"collapsed"`
-	Shared            *bool   `json:"shared,*string"`
-	IsDeleted         *int    `json:"is_deleted"`
-	IsArchived        *int    `json:"is_archived"`
-	ArchivedDate      *string `json:"archived_date"`
-	ArchivedTimestamp *int    `json:"archived_timestamp"`
-	InboxProject      *bool   `json:"inbox_project,*string"`
-	TeamInbox         *bool   `json:"team_inbox,*string"`
+	Id           *int    `json:"id"`
+	Name         *string `json:"name"`
+	Color        *int    `json:"color"`
+	ParentId     *int    `json:"parent_id"`
+	ChildOrder   *int    `json:"child_order"`
+	Collapsed    *int    `json:"collapsed"`
+	Shared       *bool   `json:"shared,*string"`
+	IsDeleted    *int    `json:"is_deleted"`
+	IsArchived   *int    `json:"is_archived"`
+	InboxProject *bool   `json:"inbox_project,*string"`
+	TeamInbox    *bool   `json:"team_inbox,*string"`
 }
 
 func (i Project) String() string {
