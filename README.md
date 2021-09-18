@@ -1,3 +1,5 @@
+![build and tests](https://github.com/seanrees/tripist/actions/workflows/build.yml/badge.svg)
+
 # Tripist
 
 This tool creates Todoist projects for upcoming trips in Tripit. It uses a configurable checklist (described below) to create tasks for each upcoming trip.
