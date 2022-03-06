@@ -1,11 +1,18 @@
 module github.com/seanrees/tripist
 
-go 1.16
+go 1.17
 
 require (
-	github.com/mrjones/oauth v0.0.0-20160405235802-31f1e8e5addd
-	github.com/stretchr/testify v1.7.0 // indirect
-	github.com/twinj/uuid v0.0.0-20160621131530-b505f2cca343
-	golang.org/x/oauth2 v0.0.0-20160718223228-08c8d727d239
+	github.com/golang/protobuf v1.5.2 // indirect
+	github.com/mrjones/oauth v0.0.0-20190623134757-126b35219450
+	github.com/twinj/uuid v1.0.0
+	golang.org/x/net v0.0.0-20220225172249-27dd8689420f // indirect
+	golang.org/x/oauth2 v0.0.0-20220223155221-ee480838109b
 	google.golang.org/appengine v1.6.7 // indirect
+	google.golang.org/protobuf v1.27.1 // indirect
+)
+
+require (
+	github.com/myesui/uuid v1.0.0 // indirect
+	gopkg.in/stretchr/testify.v1 v1.2.2 // indirect
 )
