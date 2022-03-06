@@ -3,14 +3,16 @@ package todoist
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/seanrees/tripist/tasks"
-	"github.com/twinj/uuid"
-	"golang.org/x/oauth2"
 	"io/ioutil"
 	"log"
 	"net/url"
 	"strconv"
+	"strings"
 	"time"
+
+	"github.com/seanrees/tripist/tasks"
+	"github.com/twinj/uuid"
+	"golang.org/x/oauth2"
 )
 
 const (
@@ -18,6 +20,23 @@ const (
 )
 
 func PTR(s string) *string { return &s }
+
+// Removes special characters from the project name.
+// Todoist only supports these characters in project names: - _ and .
+// They specifically call out # " ( ) | & ! , as exclusions -- so we'll
+// start with these.
+//
+// Src: https://todoist.com/help/articles/create-a-project
+func rewriteProjectName(s string) string {
+	ret := s
+	chars := []string{"#", "\"", "(", ")", "|", "&", "!", ","}
+
+	for _, c := range chars {
+		ret = strings.ReplaceAll(ret, c, "")
+	}
+
+	return ret
+}
 
 type SyncV8API struct {
 	token *oauth2.Token
@@ -141,7 +160,7 @@ func (s *SyncV8API) checkErrors(cmds *Commands, r *WriteResponse) []writeError {
 
 		c, ok := uuidTbl[uuid]
 		if !ok {
-			msg += fmt.Sprintf(", error for a different UUID than asked")
+			msg += ", error for a different UUID than asked"
 		}
 
 		if len(msg) > 0 {
@@ -179,8 +198,10 @@ func (s *SyncV8API) findProject(name string) (*Project, error) {
 		log.Printf("Could not read Todoist projects: %v", err)
 		return nil, err
 	}
+
+	rp := rewriteProjectName(name)
 	for _, p := range resp.Projects {
-		if *p.Name == name {
+		if *p.Name == rp {
 			log.Printf("Found existing project %q id=%d", *p.Name, *p.Id)
 			return &p, nil
 		}
@@ -193,7 +214,7 @@ func (s *SyncV8API) createProject(name, tempId string) WriteItem {
 		Type:   PTR(ProjectAdd),
 		TempId: PTR(tempId),
 		UUID:   PTR(uuid.NewV4().String()),
-		Args:   Project{Name: PTR(name)}}
+		Args:   Project{Name: PTR(rewriteProjectName(name))}}
 }
 
 func (s *SyncV8API) deleteProject(p *Project) WriteItem {

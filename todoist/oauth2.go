@@ -2,8 +2,9 @@ package todoist
 
 import (
 	"fmt"
-	"golang.org/x/oauth2"
 	"log"
+
+	"golang.org/x/oauth2"
 )
 
 func buildConfig() *oauth2.Config {

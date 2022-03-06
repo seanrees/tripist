@@ -2,11 +2,12 @@ package todoist
 
 import (
 	"fmt"
-	"github.com/seanrees/tripist/tasks"
 	"log"
 	"math/rand"
 	"strconv"
 	"time"
+
+	"github.com/seanrees/tripist/tasks"
 )
 
 func init() {
@@ -74,7 +75,7 @@ func Verify(api *SyncV8API) error {
 
 	tp, err = verifyTasksInProject(name, &step, testTasks, api)
 	if err != nil {
-		return fmt.Errorf("Unable to load tasks in %q: %v", name, err)
+		return fmt.Errorf("unable to load tasks in %q: %v", name, err)
 	}
 
 	l(&step, "Updating an item in project %q", name)
@@ -87,6 +88,10 @@ func Verify(api *SyncV8API) error {
 	}
 
 	_, err = verifyTasksInProject(name, &step, testTasks, api)
+	if err == nil {
+		// We changed an item by bumping it 24hrs -- so we should see a change
+		return fmt.Errorf("expected change in tasks, did not")
+	}
 
 	l(&step, "Deleting an item")
 	items, err = api.listItems(p)
@@ -98,6 +103,10 @@ func Verify(api *SyncV8API) error {
 		return err
 	}
 	items, err = api.listItems(p)
+	if err != nil {
+		return err
+	}
+
 	for _, i := range items {
 		if *i.Content == *del.Content {
 			return fmt.Errorf("delete item failed on item %q", *i.Content)
@@ -128,7 +137,7 @@ func randomProjectName() string {
 	for i := range name {
 		name[i] = chars[rand.Intn(len(chars))]
 	}
-	return fmt.Sprintf("Todoist Verification %s", string(name))
+	return fmt.Sprintf("Todoist Verification (%s)", string(name))
 }
 
 func verifyProjectPresence(name string, step *int, expected bool, api *SyncV8API) (*Project, error) {

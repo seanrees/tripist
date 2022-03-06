@@ -5,6 +5,34 @@ import (
 	"testing"
 )
 
+func TestRewriteProjectName(t *testing.T) {
+	cases := []struct {
+		s    string
+		want string
+	}{{
+		s:    "San Francisco, CA (March, 2022)",
+		want: "San Francisco CA March 2022",
+	}, {
+		s:    "",
+		want: "",
+	}, {
+		s:    "No Rewrite",
+		want: "No Rewrite",
+	}, {
+		s:    "#\"()|&!",
+		want: "",
+	}, {
+		s:    "-_.",
+		want: "-_.",
+	}}
+
+	for _, c := range cases {
+		got := rewriteProjectName(c.s)
+		if got != c.want {
+			t.Errorf("rewriteProjectName(%q) == %q, want %q", c.s, got, c.want)
+		}
+	}
+}
 func TestCheckErrors(t *testing.T) {
 	api := NewSyncV8API(nil)
 
