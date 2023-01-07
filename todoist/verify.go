@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 	"math/rand"
-	"strconv"
 	"time"
 
 	"github.com/seanrees/tripist/tasks"
@@ -25,7 +24,7 @@ func init() {
 //
 // This could be rewritten with Go's testing package but would require a TestMain to setup
 // the API and user keys.
-func Verify(api *SyncV8API) error {
+func Verify(api *SyncV9API) error {
 	step := 0
 
 	var err error
@@ -60,7 +59,7 @@ func Verify(api *SyncV8API) error {
 		{Content: "two.one", Indent: 2, Position: 1, DueDateUTC: due},
 	}
 	cmds := Commands{}
-	id := strconv.Itoa(*p.Id)
+	id := *p.Id
 
 	parents := make([]*string, 3)
 
@@ -140,7 +139,7 @@ func randomProjectName() string {
 	return fmt.Sprintf("Todoist Verification (%s)", string(name))
 }
 
-func verifyProjectPresence(name string, step *int, expected bool, api *SyncV8API) (*Project, error) {
+func verifyProjectPresence(name string, step *int, expected bool, api *SyncV9API) (*Project, error) {
 	l(step, "Checking %q presence", name)
 
 	p, err := api.findProject(name)
@@ -159,7 +158,7 @@ func verifyProjectPresence(name string, step *int, expected bool, api *SyncV8API
 	return p, nil
 }
 
-func verifyTasksInProject(name string, step *int, expected []tasks.Task, api *SyncV8API) (*tasks.Project, error) {
+func verifyTasksInProject(name string, step *int, expected []tasks.Task, api *SyncV9API) (*tasks.Project, error) {
 	l(step, "Verifying items in project %q", name)
 	tp, found, err := api.LoadProject(name)
 	if err != nil {
