@@ -6,7 +6,6 @@ import (
 	"io/ioutil"
 	"log"
 	"net/url"
-	"strconv"
 	"strings"
 	"time"
 
@@ -16,7 +15,7 @@ import (
 )
 
 const (
-	ApiPath = "https://todoist.com/API/v8/sync"
+	ApiPath = "https://todoist.com/API/v9/sync"
 )
 
 func PTR(s string) *string { return &s }
@@ -38,15 +37,15 @@ func rewriteProjectName(s string) string {
 	return ret
 }
 
-type SyncV8API struct {
+type SyncV9API struct {
 	token *oauth2.Token
 }
 
-func NewSyncV8API(t *oauth2.Token) *SyncV8API {
-	return &SyncV8API{token: t}
+func NewSyncV9API(t *oauth2.Token) *SyncV9API {
+	return &SyncV9API{token: t}
 }
 
-func (s *SyncV8API) makeRequest(path string, data url.Values, obj interface{}) error {
+func (s *SyncV9API) makeRequest(path string, data url.Values, obj interface{}) error {
 	c := buildConfig().Client(oauth2.NoContext, s.token)
 	resp, err := c.PostForm(path, data)
 
@@ -69,7 +68,7 @@ func (s *SyncV8API) makeRequest(path string, data url.Values, obj interface{}) e
 
 // Reads specific types and returns a ReadResponse. Possible types are in constants:
 // Projects, Items.
-func (s *SyncV8API) Read(types []string) (ReadResponse, error) {
+func (s *SyncV9API) Read(types []string) (ReadResponse, error) {
 	resp := ReadResponse{}
 	params := url.Values{}
 	params.Add("token", s.token.AccessToken)
@@ -87,7 +86,7 @@ func (s *SyncV8API) Read(types []string) (ReadResponse, error) {
 	return resp, nil
 }
 
-func (s *SyncV8API) Write(c Commands) (WriteResponse, error) {
+func (s *SyncV9API) Write(c Commands) (WriteResponse, error) {
 	resp := WriteResponse{}
 	params := url.Values{}
 	params.Add("token", s.token.AccessToken)
@@ -114,7 +113,7 @@ func (s *SyncV8API) Write(c Commands) (WriteResponse, error) {
 	return resp, nil
 }
 
-func (s *SyncV8API) checkErrors(cmds *Commands, r *WriteResponse) []writeError {
+func (s *SyncV9API) checkErrors(cmds *Commands, r *WriteResponse) []writeError {
 	var ret []writeError
 	uuidTbl := make(map[string]WriteItem)
 	for _, c := range *cmds {
@@ -172,7 +171,7 @@ func (s *SyncV8API) checkErrors(cmds *Commands, r *WriteResponse) []writeError {
 	return ret
 }
 
-func (s *SyncV8API) listItems(p *Project) ([]Item, error) {
+func (s *SyncV9API) listItems(p *Project) ([]Item, error) {
 	resp, err := s.Read([]string{Items})
 
 	if err != nil {
@@ -182,7 +181,7 @@ func (s *SyncV8API) listItems(p *Project) ([]Item, error) {
 
 	var ret []Item
 	for _, i := range resp.Items {
-		if i.ProjectIdInt() == *p.Id {
+		if *i.ProjectId == *p.Id {
 			ret = append(ret, i)
 		}
 	}
@@ -192,7 +191,7 @@ func (s *SyncV8API) listItems(p *Project) ([]Item, error) {
 	return ret, nil
 }
 
-func (s *SyncV8API) findProject(name string) (*Project, error) {
+func (s *SyncV9API) findProject(name string) (*Project, error) {
 	resp, err := s.Read([]string{Projects})
 	if err != nil {
 		log.Printf("Could not read Todoist projects: %v", err)
@@ -202,14 +201,14 @@ func (s *SyncV8API) findProject(name string) (*Project, error) {
 	rp := rewriteProjectName(name)
 	for _, p := range resp.Projects {
 		if *p.Name == rp {
-			log.Printf("Found existing project %q id=%d", *p.Name, *p.Id)
+			log.Printf("Found existing project %q id=%v", *p.Name, *p.Id)
 			return &p, nil
 		}
 	}
 	return nil, nil
 }
 
-func (s *SyncV8API) createProject(name, tempId string) WriteItem {
+func (s *SyncV9API) createProject(name, tempId string) WriteItem {
 	return WriteItem{
 		Type:   PTR(ProjectAdd),
 		TempId: PTR(tempId),
@@ -217,14 +216,14 @@ func (s *SyncV8API) createProject(name, tempId string) WriteItem {
 		Args:   Project{Name: PTR(rewriteProjectName(name))}}
 }
 
-func (s *SyncV8API) deleteProject(p *Project) WriteItem {
+func (s *SyncV9API) deleteProject(p *Project) WriteItem {
 	return WriteItem{
 		Type: PTR(ProjectDelete),
 		UUID: PTR(uuid.NewV4().String()),
 		Args: IdContainer{Id: *p.Id}}
 }
 
-func (s *SyncV8API) createItem(projId string, parent *string, t tasks.Task) WriteItem {
+func (s *SyncV9API) createItem(projId string, parent *string, t tasks.Task) WriteItem {
 	log.Printf("Creating task %q (pos=%d) due %s", t.Content, t.Position, t.DueDateUTC.Format(time.RFC3339))
 
 	// Todoist does not deal well with ItemOrder = 0; it won't honour order with
@@ -246,7 +245,7 @@ func (s *SyncV8API) createItem(projId string, parent *string, t tasks.Task) Writ
 			ProjectId: &projId}}
 }
 
-func (s *SyncV8API) updateItem(i Item, t tasks.Task) WriteItem {
+func (s *SyncV9API) updateItem(i Item, t tasks.Task) WriteItem {
 	log.Printf("Updating task %q (pos=%d) due %s", t.Content, t.Position, t.DueDateUTC.Format(time.RFC3339))
 
 	// Todoist does not deal well with ItemOrder = 0; it won't honour order with
@@ -264,7 +263,7 @@ func (s *SyncV8API) updateItem(i Item, t tasks.Task) WriteItem {
 		Args:   i}
 }
 
-func (s *SyncV8API) deleteItem(i Item) WriteItem {
+func (s *SyncV9API) deleteItem(i Item) WriteItem {
 	return WriteItem{
 		Type: PTR(ItemDelete),
 		UUID: PTR(uuid.NewV4().String()),
@@ -272,7 +271,7 @@ func (s *SyncV8API) deleteItem(i Item) WriteItem {
 }
 
 // Returns a tasks.Project, whether or not it was found, and any error.
-func (s *SyncV8API) LoadProject(name string) (tasks.Project, bool, error) {
+func (s *SyncV9API) LoadProject(name string) (tasks.Project, bool, error) {
 	ret := tasks.Project{Name: name}
 	found := false
 
@@ -290,7 +289,7 @@ func (s *SyncV8API) LoadProject(name string) (tasks.Project, bool, error) {
 		return ret, found, err
 	}
 
-	parents := []int{0}
+	parents := []string{"0"}
 
 	for _, i := range li {
 		if !i.Valid() {
@@ -312,12 +311,12 @@ func (s *SyncV8API) LoadProject(name string) (tasks.Project, bool, error) {
 		indent := 0
 		if i.ParentId != nil {
 			for idx, id := range parents {
-				if id == i.ParentIdInt() {
+				if id == *i.ParentId {
 					indent = idx + 1
 				}
 			}
 			for len(parents) < indent+1 {
-				parents = append(parents, 0)
+				parents = append(parents, "0")
 			}
 			parents[indent] = *i.Id
 		} else {
@@ -329,7 +328,7 @@ func (s *SyncV8API) LoadProject(name string) (tasks.Project, bool, error) {
 			DueDateUTC: due,
 			// For historical reasons in Todoist, we're 1-based.
 			Indent:    indent + 1,
-			Completed: *i.Checked == 1,
+			Completed: *i.Checked,
 			Position:  (*i.ChildOrder) - 1})
 	}
 
@@ -338,7 +337,7 @@ func (s *SyncV8API) LoadProject(name string) (tasks.Project, bool, error) {
 	return ret, found, nil
 }
 
-func (s *SyncV8API) CreateProject(p tasks.Project) error {
+func (s *SyncV9API) CreateProject(p tasks.Project) error {
 	tempId := uuid.NewV4().String()
 
 	cmds := Commands{s.createProject(p.Name, tempId)}
@@ -348,7 +347,7 @@ func (s *SyncV8API) CreateProject(p tasks.Project) error {
 	return err
 }
 
-func (s *SyncV8API) addTasks(tempId string, ts []tasks.Task) Commands {
+func (s *SyncV9API) addTasks(tempId string, ts []tasks.Task) Commands {
 	var cmds Commands
 
 	// Support indent -> parentId conversion.
@@ -370,7 +369,7 @@ func (s *SyncV8API) addTasks(tempId string, ts []tasks.Task) Commands {
 	return cmds
 }
 
-func (s *SyncV8API) UpdateProject(p tasks.Project, diffs []tasks.Diff) error {
+func (s *SyncV9API) UpdateProject(p tasks.Project, diffs []tasks.Diff) error {
 	tp, ok := p.External.(*projectItems)
 	if !ok {
 		return fmt.Errorf("missing or invalid external project pointer on %q", p.Name)
@@ -396,10 +395,7 @@ func (s *SyncV8API) UpdateProject(p tasks.Project, diffs []tasks.Diff) error {
 		}
 	}
 
-	// Sigh. Todoist's API is inconsistent here; in Create, we make a string but get
-	// back an int. So we need to make it a string again.
-	projectId := strconv.Itoa(tp.ProjectId)
-	cmds = append(cmds, s.addTasks(projectId, adds)...)
+	cmds = append(cmds, s.addTasks(tp.ProjectId, adds)...)
 
 	if len(cmds) > 0 {
 		_, err := s.Write(cmds)

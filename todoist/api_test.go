@@ -34,7 +34,7 @@ func TestRewriteProjectName(t *testing.T) {
 	}
 }
 func TestCheckErrors(t *testing.T) {
-	api := NewSyncV8API(nil)
+	api := NewSyncV9API(nil)
 
 	// The actual commands don't matter, so we choose createProject as it's the
 	// simplest to create.

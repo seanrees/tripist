@@ -6,9 +6,6 @@ import (
 )
 
 const (
-	True  = 1
-	False = 0
-
 	// Types that can be read.
 	Items    = "items"
 	Projects = "projects"
@@ -82,14 +79,14 @@ func (i WriteItem) String() string {
 }
 
 type IdContainer struct {
-	Id int `json:"id"`
+	Id string `json:"id"`
 }
 
 type Commands []WriteItem
 
 type WriteResponse struct {
-	SequenceNumber *int           `json:"seq_no"`
-	TempIdMapping  map[string]int `json:"temp_id_mapping"`
+	SequenceNumber *int              `json:"seq_no"`
+	TempIdMapping  map[string]string `json:"temp_id_mapping"`
 
 	// Map of the Command UUID to one of either a string ("ok") or to another map[string]interface{}.
 	SyncStatus map[string]interface{} `json:"sync_status"`
@@ -100,26 +97,22 @@ func (i WriteResponse) String() string {
 }
 
 type Item struct {
-	Id     *int `json:"id"`
-	UserId *int `json:"user_id"`
-	// This field is normally an Integer, but in a Write, can be a *string-ified UUID.
-	ProjectId interface{} `json:"project_id"`
-	Content   *string     `json:"content"`
-	Due       *Due        `json:"due"`
-	Priority  *int        `json:"priority"`
-	// This field is normally an Integer, but in a Write, can be a *string-ified UUID.
-	ParentId       interface{} `json:"parent_id"`
-	ChildOrder     *int        `json:"child_order"`
-	DayOrder       *int        `json:"day_order"`
-	Collapsed      *int        `json:"collapsed"`
-	Labels         []int       `json:"labels"`
-	AssignedByUid  *int        `json:"assigned_by_uid"`
-	ResponsibleUid *int        `json:"responsible_uid"`
-	Checked        *int        `json:"checked"`
-	InHistory      *int        `json:"in_history"`
-	IsDeleted      *int        `json:"is_deleted"`
-	SyncId         *int        `json:"sync_id"`
-	DateAdded      *string     `json:"date_added"`
+	Id             *string `json:"id"`
+	UserId         *string `json:"user_id"`
+	ProjectId      *string `json:"project_id"`
+	Content        *string `json:"content"`
+	Due            *Due    `json:"due"`
+	Priority       *int    `json:"priority"`
+	ParentId       *string `json:"parent_id"`
+	ChildOrder     *int    `json:"child_order"`
+	DayOrder       *int    `json:"day_order"`
+	Collapsed      *bool   `json:"collapsed"`
+	Labels         []int   `json:"labels"`
+	AssignedByUid  *string `json:"assigned_by_uid"`
+	ResponsibleUid *string `json:"responsible_uid"`
+	Checked        *bool   `json:"checked"`
+	IsDeleted      *bool   `json:"is_deleted"`
+	SyncId         *int    `json:"sync_id"`
 }
 
 func (i Item) Valid() bool {
@@ -128,21 +121,6 @@ func (i Item) Valid() bool {
 
 func (i Item) String() string {
 	return stringify(i)
-}
-func (i Item) ProjectIdInt() int {
-	v, ok := i.ProjectId.(float64) // Sigh, this is what Go marshals it as.
-	if !ok {
-		return -1
-	}
-	return int(v)
-}
-
-func (i Item) ParentIdInt() int {
-	v, ok := i.ParentId.(float64) // Sigh, this is what Go marshals it as.
-	if !ok {
-		return -1
-	}
-	return int(v)
 }
 
 type Due struct {
@@ -155,15 +133,15 @@ type Due struct {
 }
 
 type Project struct {
-	Id           *int    `json:"id"`
+	Id           *string `json:"id"`
 	Name         *string `json:"name"`
-	Color        *int    `json:"color"`
-	ParentId     *int    `json:"parent_id"`
+	Color        *string `json:"color"`
+	ParentId     *string `json:"parent_id"`
 	ChildOrder   *int    `json:"child_order"`
-	Collapsed    *int    `json:"collapsed"`
+	Collapsed    *bool   `json:"collapsed"`
 	Shared       *bool   `json:"shared,*string"`
-	IsDeleted    *int    `json:"is_deleted"`
-	IsArchived   *int    `json:"is_archived"`
+	IsDeleted    *bool   `json:"is_deleted"`
+	IsArchived   *bool   `json:"is_archived"`
 	InboxProject *bool   `json:"inbox_project,*string"`
 	TeamInbox    *bool   `json:"team_inbox,*string"`
 }
@@ -174,7 +152,7 @@ func (i Project) String() string {
 
 // For riding along when interfacing with the local tasks API.
 type projectItems struct {
-	ProjectId int
+	ProjectId string
 	Items     []Item
 }
 
