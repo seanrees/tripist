@@ -9,10 +9,10 @@ import (
 	"time"
 
 	"github.com/mrjones/oauth"
-	"github.com/seanrees/tripist/config"
-	"github.com/seanrees/tripist/tasks"
-	"github.com/seanrees/tripist/todoist"
-	"github.com/seanrees/tripist/tripit"
+	"github.com/seanrees/tripist/internal/config"
+	"github.com/seanrees/tripist/internal/tasks"
+	"github.com/seanrees/tripist/internal/todoist"
+	"github.com/seanrees/tripist/internal/tripit"
 	"golang.org/x/oauth2"
 )
 

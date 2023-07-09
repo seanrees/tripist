@@ -3,13 +3,14 @@ package main
 
 import (
 	"flag"
-	"github.com/mrjones/oauth"
-	"github.com/seanrees/tripist/config"
-	"github.com/seanrees/tripist/tripit"
 	"log"
 	"os"
 	"sort"
 	"strings"
+
+	"github.com/mrjones/oauth"
+	"github.com/seanrees/tripist/internal/config"
+	"github.com/seanrees/tripist/internal/tripit"
 )
 
 var (

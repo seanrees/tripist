@@ -116,21 +116,21 @@ type Segment struct {
 func newSegment(kv map[string]interface{}) Segment {
 	sd := newDateTime(kv["StartDateTime"].(map[string]interface{}))
 
-    ed := DateTime{"", "", "", ""}
-    if kv["EndDateTime"] != nil {
-      ed = newDateTime(kv["EndDateTime"].(map[string]interface{}))
-    }
+	ed := DateTime{"", "", "", ""}
+	if kv["EndDateTime"] != nil {
+		ed = newDateTime(kv["EndDateTime"].(map[string]interface{}))
+	}
 
-    sac := ""
-    eac := ""
+	sac := ""
+	eac := ""
 
-    if kv["start_airport_code"] != nil {
-      sac = kv["start_airport_code"].(string)
-    }
+	if kv["start_airport_code"] != nil {
+		sac = kv["start_airport_code"].(string)
+	}
 
-    if kv["end_airport_code"] != nil {
-      eac = kv["end_airport_code"].(string)
-    }
+	if kv["end_airport_code"] != nil {
+		eac = kv["end_airport_code"].(string)
+	}
 
 	return Segment{
 		StartDateTime:    sd,
