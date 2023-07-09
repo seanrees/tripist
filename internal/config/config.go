@@ -4,10 +4,11 @@ package config
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/seanrees/tripist/todoist"
-	"github.com/seanrees/tripist/tripit"
 	"io/ioutil"
 	"os"
+
+	"github.com/seanrees/tripist/internal/todoist"
+	"github.com/seanrees/tripist/internal/tripit"
 )
 
 type UserKeys struct {

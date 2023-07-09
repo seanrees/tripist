@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/seanrees/tripist/tasks"
+	"github.com/seanrees/tripist/internal/tasks"
 	"github.com/twinj/uuid"
 	"golang.org/x/oauth2"
 )

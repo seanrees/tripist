@@ -6,7 +6,7 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/seanrees/tripist/tasks"
+	"github.com/seanrees/tripist/internal/tasks"
 )
 
 func init() {
